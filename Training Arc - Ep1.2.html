@@ -50,7 +50,7 @@
     position: relative; /* For dropdown menu */
     display: flex;
     align-items: center;
-    height: 100%; /* Ensure it fills grid cell height for menu icon centering */
+    height: 100%; /* Ensure it fills grid cell height for menu centering */
   }
   .menu-icon { /* Kebab menu icon itself */
     cursor: pointer;
@@ -93,7 +93,7 @@
     transform: translateY(0) scale(1);
     pointer-events: auto;
   }
-  .dropdown-item, .modal-item, .cat-item {
+  .dropdown-item, .modal-item { /* Removed .cat-item */
     padding: 12px 18px;
     cursor: pointer;
     border-bottom: 1px solid #f0f0f0;
@@ -108,15 +108,15 @@
     align-items: center;
     gap: 8px;
   }
-  .preset-item {
+  .preset-item { /* This class is no longer used for list items in the modal */
     padding: 5px 10px;
     cursor: pointer;
-    font-size: 0.9rem; /* Slightly smaller for presets */
+    font-size: 0.9rem;
     user-select: none;
     color: #333;
     transition: background-color 0.15s ease;
     border-radius: 4px;
-    border: 1px solid #d1d5db; /* Give presets a subtle border */
+    border: 1px solid #d1d5db;
     background-color: #f9f9f9;
   }
   .preset-item:disabled {
@@ -124,10 +124,10 @@
     cursor: default;
     background-color: #e9ecef;
   }
-  .dropdown-item:last-child, .modal-item:last-child, .cat-item:last-child {
+  .dropdown-item:last-child, .modal-item:last-child { /* Removed .cat-item */
     border-bottom: none;
   }
-  .dropdown-item:hover, .modal-item:hover, .cat-item:hover, .preset-item:hover:not(:disabled) {
+  .dropdown-item:hover, .modal-item:hover, .preset-item:hover:not(:disabled) { /* Removed .cat-item */
     background-color: #f0f0f0;
   }
 
@@ -169,9 +169,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* --- START Modifications --- */
-    margin: 5px 0 15px; /* UPDATED: Reduced top margin */
-    /* --- END Modifications --- */
+    margin: 5px 0 15px;
   }
   #profile-select {
     appearance: none;
@@ -180,17 +178,15 @@
     background-color: transparent;
     border: none;
     padding: 5px 8px;
-    font-size: 1.1rem; /* Text-like size */
-    font-weight: normal; /* UPDATED: Unbold */
+    font-size: 1.1rem;
+    font-weight: normal;
     cursor: pointer;
     outline: none;
     margin: 0;
     text-align: center;
     text-align-last: center;
-    /* --- START Modifications --- */
-    text-decoration: underline; /* Underline the profile name */
-    color: #555; /* Make profile name grey */
-    /* --- END Modifications --- */
+    text-decoration: underline;
+    color: #555;
   }
   #profile-select::-ms-expand {
     display: none;
@@ -393,9 +389,7 @@
     transition: background-color 0.2s ease, opacity 0.2s ease, transform 0.1s ease;
   }
    .modal-button:active { transform: translateY(1px); }
-  /* --- START Modifications --- */
-  .modal-button.save { background-color: #00BFFF; color: #fff; } /* Changed save color */
-  /* --- END Modifications --- */
+  .modal-button.save { background-color: #00BFFF; color: #fff; }
   .modal-button.cancel { background-color: #6c757d; color: #fff; }
 
   .modal-button.delete {
@@ -428,11 +422,30 @@
     color: #FFFFFF;
   }
 
-  #cat-list, #preset-list, #profile-list {
+  /* --- DRAG & DROP & CATEGORY MANAGEMENT START --- */
+  #cat-list, #profile-list { /* Removed #preset-list */
     margin-top: 10px; margin-bottom: 20px;
   }
-  /* No specific styling for #profile-list .modal-item, uses generic .modal-item now */
-  /* No specific styling for #cat-list .cat-item, uses generic .modal-item now */
+
+  #cat-list .modal-item {
+      cursor: grab; /* Indicate draggable item */
+      position: relative; /* Needed for drag-over effect */
+      z-index: 1; /* Ensure items are above potential drag indicators */
+  }
+
+  #cat-list .modal-item.dragging {
+      opacity: 0.5; /* Make the item being dragged semi-transparent */
+  }
+
+  #cat-list .modal-item.drag-over-before {
+      border-top: 2px dashed #007bff; /* Visual cue for drop target */
+  }
+
+   #cat-list .modal-item.drag-over-after {
+      border-bottom: 2px dashed #007bff; /* Visual cue for drop target */
+  }
+  /* --- DRAG & DROP & CATEGORY MANAGEMENT END --- */
+
 
   #schedule-inputs {
     display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -509,46 +522,77 @@
   <div class="modal-overlay" id="cat-modal-overlay"></div>
   <div class="modal" id="cat-modal">
     <h3>Manage Categories</h3>
-    <label class="modal-label">Preset Categories <span style="font-weight:normal; font-size:0.8rem;">(click to add to custom)</span></label>
-    <div id="preset-list" style="margin-bottom: 20px; display:flex; flex-wrap:wrap; gap:5px;"></div>
-    <label class="modal-label">Custom Categories</label>
-    <div id="cat-list"></div>
-    <input type="text" id="new-category-name-input" class="modal-input" placeholder="New category name" style="margin-top: 15px; margin-bottom:10px;">
-    <button class="modal-button save" id="add-cat-btn" style="width:100%; margin-bottom:10px;">Add Custom Category</button>
-    <div class="modal-actions" style="justify-content: flex-end;">
+    <label class="modal-label">Drag to reorder. Click 'x' to remove (not possible for original presets).</label> <div id="cat-list"></div> <input type="text" id="new-category-name-input" class="modal-input" placeholder="Add new category..." style="margin-top: 15px; margin-bottom:10px;">
+    <button class="modal-button save" id="add-cat-btn" style="width:100%; margin-bottom:10px;">Add Category</button> <div class="modal-actions" style="justify-content: flex-end;">
       <button class="modal-button cancel" onclick="closeCatModal()">Close</button>
       </div>
   </div>
 
 <script>
     const WEEKDAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-    const PRESET_CATEGORIES=["Daily GTG","Upper Body","Lower Body","Mobility","Core","Conditioning","Skills"];
-    let customCategories=[], exercises=[], collapsedCategories={}, editIndex=null;
+    const ORIGINAL_PRESET_CATEGORIES=["Daily GTG","Upper Body","Lower Body","Mobility","Core","Conditioning","Skills"]; // Keep original presets separate
+    let exercises=[], collapsedCategories={}, editIndex=null;
     let isWeekly=true;
 
-    try {
-      customCategories=JSON.parse(localStorage.getItem('customCategories'))||[];
-      collapsedCategories=JSON.parse(localStorage.getItem('collapsedCategories'))||{};
-    }catch(e){
-        console.error("Error loading categories/collapsed state:", e);
-        customCategories=[]; collapsedCategories={};
+    // --- DRAG & DROP & CATEGORY MANAGEMENT START ---
+    let categoryOrder = []; // This will hold the current order of ALL categories
+    let dragStartIndex = -1; // For drag and drop
+
+    function loadCategoryOrder() {
+        try {
+            const storedOrder = localStorage.getItem('categoryOrder');
+            if (storedOrder) {
+                 categoryOrder = JSON.parse(storedOrder);
+                 // Migration or cleanup: ensure categoryOrder only contains strings and no duplicates
+                 categoryOrder = Array.from(new Set(categoryOrder.filter(item => typeof item === 'string')));
+
+                 // Ensure all original presets are included if they somehow got removed, append them to the end
+                 const currentOrderLower = categoryOrder.map(cat => cat.toLowerCase());
+                 ORIGINAL_PRESET_CATEGORIES.forEach(preset => {
+                     if (!currentOrderLower.includes(preset.toLowerCase())) {
+                         categoryOrder.push(preset);
+                     }
+                 });
+
+            } else {
+                // Initial load: Create order from old customCategories (if any) and presets
+                const oldCustomCategories = JSON.parse(localStorage.getItem('customCategories')) || [];
+                 // Start with old custom categories, then add presets not already in custom
+                categoryOrder = [...oldCustomCategories, ...ORIGINAL_PRESET_CATEGORIES.filter(p => !oldCustomCategories.map(c => c.toLowerCase()).includes(p.toLowerCase()))];
+                 // Remove old customCategories from storage after migration
+                 localStorage.removeItem('customCategories');
+            }
+        } catch(e) {
+            console.error("Error loading category order:", e);
+            categoryOrder = [...ORIGINAL_PRESET_CATEGORIES]; // Fallback to just presets
+        }
+         saveCategoryOrderToStorage(); // Save the potentially new or corrected order immediately
+         console.log("Loaded/Initial Category Order:", categoryOrder); // Log for debugging
     }
 
-    function allCategories(){ return [...new Set([...PRESET_CATEGORIES,...customCategories])]; }
+     function saveCategoryOrderToStorage() {
+        localStorage.setItem('categoryOrder', JSON.stringify(categoryOrder));
+         console.log("Saved Category Order:", categoryOrder); // Log for debugging
+    }
+
+    // This function now just returns the loaded/saved order
+    function allCategories(){ return [...categoryOrder]; } // Return a copy
+    // --- DRAG & DROP & CATEGORY MANAGEMENT END ---
+
     function toggleMenu(){ document.getElementById('dropdown-menu').classList.toggle('show'); }
     function toggleViewMode(){ isWeekly=!isWeekly; document.getElementById('dropdown-menu').classList.remove('show'); renderExercises(); }
 
     function exportExercises(){
         toggleMenu();
-        if (exercises.length === 0) {
-            alert("No exercises to export for the current profile.");
+        if (exercises.length === 0 && categoryOrder.length === 0) { // Check categoryOrder too
+            alert("No exercises or categories to export for the current profile.");
             return;
         }
         const profileName = currentProfile.replace(/\s+/g, '_');
         const exportData = {
             profileName: currentProfile,
             exercises: exercises,
-            customCategories: customCategories,
+            categoryOrder: categoryOrder, // Export the category order
             viewSettings: { isWeekly: isWeekly }
         };
         const a=document.createElement('a');
@@ -602,17 +646,68 @@
 
                         if (!profileSwitchConfirmed) return;
 
-                        if (importedData.customCategories && Array.isArray(importedData.customCategories)) {
-                            const incomingCustomCats = importedData.customCategories;
-                            const existingLowerCustomCats = customCategories.map(c => c.toLowerCase());
-                            const newCatsToAdd = incomingCustomCats.filter(cat => !existingLowerCustomCats.includes(cat.toLowerCase()) && !PRESET_CATEGORIES.map(p=>p.toLowerCase()).includes(cat.toLowerCase()));
-                            if (newCatsToAdd.length > 0) {
-                                if (confirm(`Import includes new custom categories: ${newCatsToAdd.join(', ')}. Add them?`)) {
-                                    customCategories.push(...newCatsToAdd);
-                                    localStorage.setItem('customCategories', JSON.stringify(customCategories)); // Save imported categories
+                        // --- DRAG & DROP & CATEGORY MANAGEMENT START ---
+                        // Handle imported category order
+                        if (importedData.categoryOrder && Array.isArray(importedData.categoryOrder)) {
+                             if (confirm(`Imported data includes a custom category order. Use this order and merge in any new categories?`)) {
+                                 const importedOrder = importedData.categoryOrder.filter(item => typeof item === 'string');
+                                 const currentOrderLower = categoryOrder.map(c => c.toLowerCase());
+
+                                 // Add imported categories that are not currently present
+                                 importedOrder.forEach(importedCat => {
+                                     if (!currentOrderLower.includes(importedCat.toLowerCase())) {
+                                         categoryOrder.push(importedCat); // Add new ones to the end initially
+                                     }
+                                 });
+
+                                 // Now reorder categoryOrder based on the importedOrder sequence
+                                 const newCategoryOrder = importedOrder.filter(cat => categoryOrder.map(c => c.toLowerCase()).includes(cat.toLowerCase())); // Start with existing categories from import
+                                  // Add any existing categories not in the import to the end
+                                  categoryOrder.forEach(currentCat => {
+                                      if (!newCategoryOrder.map(c => c.toLowerCase()).includes(currentCat.toLowerCase())) {
+                                          newCategoryOrder.push(currentCat);
+                                      }
+                                  });
+                                 categoryOrder = newCategoryOrder; // Apply the merged and reordered list
+
+                                 saveCategoryOrderToStorage(); // Save the merged/reordered categories
+                                 populateCatModal(); // Refresh modal if open
+                                 populateExerciseCategoryDropdown(); // Update dropdown
+                             } else {
+                                  // User chose not to use imported order, keep current categoryOrder state
+                                  // Still need to ensure imported exercises' categories exist in categoryOrder
+                                   importedData.exercises.forEach(ex => {
+                                       if (ex.category) {
+                                           const catExists = categoryOrder.some(c => c.toLowerCase() === ex.category.toLowerCase());
+                                           if (!catExists) {
+                                                if (confirm(`The exercise "${ex.name}" uses category "${ex.category}" which is not in your list. Add "${ex.category}"?`)) {
+                                                     categoryOrder.push(ex.category); // Add new exercise category to the end
+                                                     saveCategoryOrderToStorage();
+                                                     populateCatModal();
+                                                     populateExerciseCategoryDropdown();
+                                                }
+                                           }
+                                       }
+                                   });
+                             }
+                        } else {
+                             // No categoryOrder in import, just ensure exercise categories exist
+                             importedData.exercises.forEach(ex => {
+                                if (ex.category) {
+                                    const catExists = categoryOrder.some(c => c.toLowerCase() === ex.category.toLowerCase());
+                                    if (!catExists) {
+                                         if (confirm(`The exercise "${ex.name}" uses category "${ex.category}" which is not in your list. Add "${ex.category}"?`)) {
+                                             categoryOrder.push(ex.category); // Add new exercise category to the end
+                                             saveCategoryOrderToStorage();
+                                             populateCatModal();
+                                             populateExerciseCategoryDropdown();
+                                         }
+                                    }
                                 }
-                            }
+                             });
                         }
+                        // --- DRAG & DROP & CATEGORY MANAGEMENT END ---
+
 
                         currentProfile = importToProfile;
                         localStorage.setItem("currentProfile", currentProfile);
@@ -627,9 +722,10 @@
 
                         if (importedData.viewSettings && typeof importedData.viewSettings.isWeekly === 'boolean') {
                             isWeekly = importedData.viewSettings.isWeekly;
+                            localStorage.setItem('isWeeklyView', isWeekly); // Save imported view mode
                         }
                         renderExercises();
-                        populateExerciseCategoryDropdown(); // After customCategories might have changed
+                        // populateExerciseCategoryDropdown(); // Called during category import handling
                         alert("Data imported successfully to profile: " + currentProfile + "!");
                     } else { alert("Invalid file format. Expected 'exercises' array."); }
                 } catch (err) { alert("Error importing file: " + err.message); console.error("Import error:", err); }
@@ -641,6 +737,7 @@
 
     function clearExercises(){
         toggleMenu();
+        if (exercises.length === 0) { alert("No exercises to clear."); return; }
         if(confirm(`Are you sure you want to clear all exercises for the current profile "${currentProfile}"? This cannot be undone.`)){
             exercises=[]; saveExercises(); renderExercises();
         }
@@ -655,42 +752,30 @@
         document.getElementById('cat-modal-overlay').classList.remove('active');
         document.getElementById('cat-modal').classList.remove('active');
         populateExerciseCategoryDropdown(); // Refresh dropdown in case categories changed
+        renderExercises(); // Refresh main view in case order changed
     }
     function showAbout(){
         toggleMenu();
         alert('Training Arc - GtG Loop Tracker\n\nBeta Version 1.2 (UI & Management Overhaul)\nA loop tracker for daily habits.\nProgress is saved locally.\n\nby Sascha Leng');
     }
 
-    function saveCustomCategoriesToStorage() {
-        localStorage.setItem('customCategories', JSON.stringify(customCategories));
-        populateExerciseCategoryDropdown();
-    }
-
+    // --- DRAG & DROP & CATEGORY MANAGEMENT START ---
     function populateCatModal() {
-        const presetDiv = document.getElementById('preset-list');
-        presetDiv.innerHTML = '';
-        PRESET_CATEGORIES.forEach(c => {
-            const d = document.createElement('button');
-            d.className = 'preset-item'; // Simpler class, styled above
-            d.textContent = c;
-            d.disabled = customCategories.map(cc => cc.toLowerCase()).includes(c.toLowerCase());
-            d.onclick = () => {
-                if (!customCategories.map(cc => cc.toLowerCase()).includes(c.toLowerCase())) {
-                    customCategories.push(c);
-                    saveCustomCategoriesToStorage();
-                    populateCatModal(); // Refresh this modal
-                }
-            };
-            presetDiv.appendChild(d);
-        });
-
         const list = document.getElementById('cat-list');
         list.innerHTML = '';
-        customCategories.forEach((catName, index) => {
+
+        if (categoryOrder.length === 0) {
+             list.innerHTML = `<p style="text-align:center; color:#777; margin-top:10px;">No categories defined. Add one below!</p>`;
+             return;
+        }
+
+        categoryOrder.forEach((catName) => { // Iterate directly over the order array
             const originalCategoryName = catName; // For closure
 
             const item = document.createElement('div');
             item.className = 'modal-item';
+            item.setAttribute('draggable', true); // Make the item draggable
+            item.setAttribute('data-name', originalCategoryName); // Store the category name for drag/drop
 
             const nameSpan = document.createElement('span');
             nameSpan.textContent = originalCategoryName;
@@ -698,7 +783,7 @@
 
             const nameInput = document.createElement('input');
             nameInput.type = 'text';
-            nameInput.className = 'modal-input list-rename-input'; // Specific class for styling
+            nameInput.className = 'modal-input list-rename-input';
             nameInput.value = originalCategoryName;
             nameInput.style.display = 'none';
 
@@ -717,10 +802,11 @@
             cancelRenameBtn.style.display = 'none';
 
             const deleteBtn = document.createElement('button');
-            /* --- START Modifications --- */
-            deleteBtn.textContent = 'x'; // Changed to 'x'
-            /* --- END Modifications --- */
+            deleteBtn.textContent = 'x';
             deleteBtn.className = 'modal-button delete';
+            // Disable delete for original preset categories
+            deleteBtn.disabled = ORIGINAL_PRESET_CATEGORIES.map(p => p.toLowerCase()).includes(originalCategoryName.toLowerCase());
+
 
             const controlsDiv = document.createElement('div');
             controlsDiv.style.display = 'flex';
@@ -736,7 +822,13 @@
             item.appendChild(controlsDiv);
             list.appendChild(item);
 
+            nameInput.onfocus = () => { item.setAttribute('draggable', false); };
+            nameInput.onblur = () => { item.setAttribute('draggable', true); };
+
+
             renameBtn.onclick = () => {
+                 // Disable dragging while editing
+                 item.setAttribute('draggable', false);
                 nameSpan.style.display = 'none';
                 nameInput.style.display = 'block'; nameInput.style.flexGrow = '1';
                 nameInput.value = nameSpan.textContent; nameInput.focus();
@@ -747,6 +839,8 @@
             };
 
             cancelRenameBtn.onclick = () => {
+                 // Re-enable dragging
+                 item.setAttribute('draggable', true);
                 nameSpan.style.display = 'block';
                 nameInput.style.display = 'none';
                 renameBtn.style.display = 'inline-block';
@@ -767,14 +861,14 @@
                     cancelRenameBtn.onclick(); return; // No change
                 }
 
-                // Check for conflicts (other custom cats OR preset cats)
-                const conflict = customCategories.some((cat, i) => i !== index && cat.toLowerCase() === newNameLower) ||
-                               PRESET_CATEGORIES.some(pCat => pCat.toLowerCase() === newNameLower);
+                 // Check for conflicts in the *entire* categoryOrder list
+                const conflict = categoryOrder.some(cat => cat.toLowerCase() === newNameLower && cat.toLowerCase() !== originalNameLower);
+
                 if (conflict) {
-                    alert(`Category name "${newNameTrimmed}" already exists (custom or preset) or is invalid.`);
+                    alert(`Category name "${newNameTrimmed}" already exists.`);
                     nameInput.focus(); return;
                 }
-                
+
                 // Update exercises using the old category name
                 exercises.forEach(ex => {
                     if (ex.category === originalCategoryName) {
@@ -783,23 +877,37 @@
                 });
                 saveExercises(); // Save exercises with updated category names
 
-                customCategories[index] = newNameTrimmed;
-                saveCustomCategoriesToStorage();
-                alert(`Category "${originalCategoryName}" renamed to "${newNameTrimmed}".`);
-                populateCatModal(); // Refresh this modal's list
-                // populateExerciseCategoryDropdown(); // Called by saveCustomCategoriesToStorage
-                renderExercises(); // To reflect category changes in main view if category names are displayed
+                // Update the categoryOrder array by finding the old name and replacing it
+                const oldIndex = categoryOrder.indexOf(originalCategoryName);
+                if(oldIndex !== -1) {
+                    categoryOrder[oldIndex] = newNameTrimmed;
+                    saveCategoryOrderToStorage();
+                    alert(`Category "${originalCategoryName}" renamed to "${newNameTrimmed}".`);
+                    populateCatModal(); // Refresh this modal's list
+                    // populateExerciseCategoryDropdown and renderExercises called when modal closes
+                } else {
+                     console.error("Category not found in order array during rename:", originalCategoryName);
+                      cancelRenameBtn.onclick(); // Revert UI if not found in array
+                }
             };
 
             deleteBtn.onclick = () => {
+                 if (deleteBtn.disabled) {
+                     alert("Original preset categories cannot be removed.");
+                     return;
+                 }
                 if (confirm(`Remove category "${originalCategoryName}"? Exercises using this category will need their category reassigned manually later if desired.`)) {
-                    // Optionally, could reassign exercises to a default category here
-                    // For now, exercises will retain the old category name string, which will no longer match a defined category.
-                    customCategories.splice(index, 1);
-                    saveCustomCategoriesToStorage();
-                    populateCatModal(); // Refresh this modal's list
-                    // populateExerciseCategoryDropdown(); // Called by saveCustomCategoriesToStorage
-                    renderExercises(); // Categories might have changed for some exercises display
+                    // Find the index by name in the current order array
+                    const indexToDelete = categoryOrder.indexOf(originalCategoryName);
+                    if(indexToDelete !== -1) {
+                         categoryOrder.splice(indexToDelete, 1);
+                         saveCategoryOrderToStorage();
+                         populateCatModal(); // Refresh this modal's list
+                         // populateExerciseCategoryDropdown and renderExercises called when modal closes
+                    } else {
+                         console.error("Category not found in order array for deletion:", originalCategoryName);
+                         populateCatModal(); // Just refresh in case of discrepancy
+                    }
                 }
             };
         });
@@ -814,28 +922,162 @@
             alert("Please enter a category name."); return;
         }
         const lowerNewCatName = newCatName.toLowerCase();
-        if (customCategories.map(c=>c.toLowerCase()).includes(lowerNewCatName) || PRESET_CATEGORIES.map(p=>p.toLowerCase()).includes(lowerNewCatName)) {
-            alert("Category already exists (custom or preset).");
+        // Check for duplicates in the entire categoryOrder list
+        if (categoryOrder.map(c=>c.toLowerCase()).includes(lowerNewCatName)) {
+            alert(`Category "${newCatName}" already exists.`);
         } else {
-            customCategories.push(newCatName);
-            saveCustomCategoriesToStorage();
-            populateCatModal();
+            categoryOrder.push(newCatName); // Add to the end
+            saveCategoryOrderToStorage();
+            populateCatModal(); // Refresh the modal list to show the new item
+            // populateExerciseCategoryDropdown and renderExercises called when modal closes
             newCatNameInput.value = '';
         }
     };
     document.getElementById('cat-modal-overlay').onclick=closeCatModal;
+
+    // Drag & Drop Event Listeners on the cat-list container
+    const catListElement = document.getElementById('cat-list');
+
+    catListElement.addEventListener('dragstart', (e) => {
+        const targetItem = e.target.closest('.modal-item');
+        if (!targetItem || !targetItem.draggable) return; // Only drag draggable items
+
+        const categoryName = targetItem.getAttribute('data-name');
+        dragStartIndex = categoryOrder.indexOf(categoryName); // Get index from the actual order array
+
+        if (dragStartIndex === -1) { // Should not happen if logic is correct
+             e.preventDefault(); return;
+        }
+
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', categoryName); // Pass the category name or index
+        targetItem.classList.add('dragging');
+    });
+
+    catListElement.addEventListener('dragover', (e) => {
+        e.preventDefault(); // Necessary to allow dropping
+        e.dataTransfer.dropEffect = 'move';
+
+        const targetItem = e.target.closest('.modal-item');
+        // Find the actual item element, not its children, and ensure it's in the list and not the item being dragged
+        if (!targetItem || !catListElement.contains(targetItem) || targetItem.classList.contains('dragging')) {
+             // Clear drag-over classes if not hovering over a valid target item
+             catListElement.querySelectorAll('.modal-item').forEach(item => {
+                 item.classList.remove('drag-over-before', 'drag-over-after');
+             });
+             return;
+         }
+
+        // Remove existing drag-over classes from all items
+        catListElement.querySelectorAll('.modal-item').forEach(item => {
+            item.classList.remove('drag-over-before', 'drag-over-after');
+        });
+
+        // Determine if dragging before or after the target item
+        const targetRect = targetItem.getBoundingClientRect();
+        const targetMiddleY = targetRect.top + targetRect.height / 2;
+
+        if (e.clientY < targetMiddleY) {
+            targetItem.classList.add('drag-over-before');
+        } else {
+             targetItem.classList.add('drag-over-after');
+        }
+    });
+
+    catListElement.addEventListener('dragleave', (e) => {
+         // Only remove class if leaving the list item itself, not just moving within it
+         const targetItem = e.target.closest('.modal-item');
+         if (targetItem && catListElement.contains(targetItem) && !targetItem.contains(e.relatedTarget)) {
+             targetItem.classList.remove('drag-over-before', 'drag-over-after');
+         } else if (!catListElement.contains(e.relatedTarget)) {
+              // Left the entire list container
+             catListElement.querySelectorAll('.modal-item').forEach(item => {
+                 item.classList.remove('drag-over-before', 'drag-over-after');
+             });
+         }
+    });
+
+
+    catListElement.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const dragItemElement = catListElement.querySelector('.modal-item.dragging'); // The DOM element being dragged
+        const targetItemElement = e.target.closest('.modal-item'); // The DOM element being dropped onto
+
+        // Remove drag-over classes from all items
+        catListElement.querySelectorAll('.modal-item').forEach(item => {
+            item.classList.remove('drag-over-before', 'drag-over-after');
+        });
+
+        if (!dragItemElement || !targetItemElement || !catListElement.contains(targetItemElement) || dragItemElement === targetItemElement) return;
+
+        const draggedCategoryName = dragItemElement.getAttribute('data-name');
+        const targetCategoryName = targetItemElement.getAttribute('data-name');
+
+        const dragIndex = categoryOrder.indexOf(draggedCategoryName);
+        let dropIndex = categoryOrder.indexOf(targetCategoryName);
+
+        if (dragIndex === -1 || dropIndex === -1) { // Should not happen
+             console.error("Dragged or target category not found in order array.");
+             return;
+        }
+
+         // Adjust dropIndex based on whether we're dropping before or after the target
+        const targetRect = targetItemElement.getBoundingClientRect();
+        const targetMiddleY = targetRect.top + targetRect.height / 2;
+        if (e.clientY > targetMiddleY) {
+            // Dropping after the target item
+            dropIndex++;
+        }
+
+        // Ensure dropIndex is not out of bounds after incrementing
+         dropIndex = Math.min(dropIndex, categoryOrder.length);
+
+
+        // Perform the move in the categoryOrder array
+        // 1. Remove the dragged item from its original position
+        const [movedCategory] = categoryOrder.splice(dragIndex, 1);
+
+        // 2. Insert the dragged item at the new position
+        categoryOrder.splice(dropIndex, 0, movedCategory);
+
+        saveCategoryOrderToStorage(); // Save the new order
+        populateCatModal(); // Re-render the list to reflect the new order
+        // populateExerciseCategoryDropdown() and renderExercises() called when modal closes
+    });
+
+    catListElement.addEventListener('dragend', (e) => {
+        const dragItem = catListElement.querySelector('.modal-item.dragging');
+        if (dragItem) {
+            dragItem.classList.remove('dragging');
+        }
+         // Also ensure drag-over classes are removed on drag end
+         catListElement.querySelectorAll('.modal-item').forEach(item => {
+             item.classList.remove('drag-over-before', 'drag-over-after');
+         });
+        dragStartIndex = -1; // Reset drag start index
+    });
+    // --- DRAG & DROP & CATEGORY MANAGEMENT END ---
+
 
     function populateExerciseCategoryDropdown() {
         const catSel = document.getElementById('ex-cat');
         const currentCatValue = catSel.value; // Preserve current selection if possible
         catSel.innerHTML = ''; // Clear existing options
 
-        const categoriesToDisplay = allCategories().sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+        const categoriesToDisplay = allCategories(); // Use the categoryOrder
 
         if (categoriesToDisplay.length === 0) {
             catSel.innerHTML = '<option value="">No Categories Available</option>';
+             // --- DRAG & DROP & CATEGORY MANAGEMENT START ---
+             // Disable the select if no categories
+            catSel.disabled = true;
+             // --- DRAG & DROP & CATEGORY MANAGEMENT END ---
             return;
         }
+
+         // --- DRAG & DROP & CATEGORY MANAGEMENT START ---
+        catSel.disabled = false;
+         // --- DRAG & DROP & CATEGORY MANAGEMENT END ---
 
         categoriesToDisplay.forEach(c => {
             catSel.add(new Option(c, c));
@@ -874,7 +1116,7 @@
 
             // Set category, handle if category was renamed/deleted
             const currentExerciseCategory = ex.category || "";
-            const availableCategories = allCategories();
+            const availableCategories = allCategories(); // Use the categoryOrder
             const categoryExists = availableCategories.some(c => c.toLowerCase() === currentExerciseCategory.toLowerCase());
 
             if (categoryExists) {
@@ -923,7 +1165,7 @@
         const name=document.getElementById('ex-name').value.trim();
         if(!name){ alert("Please enter an exercise name."); return; }
         const category=document.getElementById('ex-cat').value;
-        if(!category || category === "No Categories Available"){ alert("Please select or create a category."); return; }
+        if(!category || category === "" || category === "No Categories Available"){ alert("Please select or create a category."); return; }
         const reps=document.getElementById('ex-reps').value.trim();
         const sched={};
         WEEKDAYS.forEach((_,i)=>{
@@ -962,22 +1204,37 @@
 
     function renderByCategory(cont){
         const groupedExercises = {};
-        allCategories().forEach(cat => groupedExercises[cat] = []);
+        const categoriesInOrder = allCategories(); // Use the categoryOrder
+
+        // Initialize groups based on the current order
+        categoriesInOrder.forEach(cat => groupedExercises[cat] = []);
+        // Add a group for uncategorized exercises
+        const uncategorizedName = "Uncategorized";
+         groupedExercises[uncategorizedName] = [];
+
 
         exercises.forEach((ex, idx) => {
-            // Find the canonical category name (case-insensitive match)
-            const canonicalCat = allCategories().find(c => c.toLowerCase() === (ex.category || "").toLowerCase()) || ex.category || "Uncategorized";
-            if (!groupedExercises[canonicalCat]) groupedExercises[canonicalCat] = []; // Should already exist but defensive
-            groupedExercises[canonicalCat].push({ e: ex, idx });
+            // Find the canonical category name (case-insensitive match) in the *current* categoryOrder
+            const canonicalCat = categoriesInOrder.find(c => c.toLowerCase() === (ex.category || "").toLowerCase());
+
+            if (canonicalCat) {
+                 // Add exercise to the correctly cased canonical category group
+                 if (!groupedExercises[canonicalCat]) groupedExercises[canonicalCat] = []; // Should exist, but defensive
+                 groupedExercises[canonicalCat].push({ e: ex, idx });
+            } else {
+                // Handle exercises with a category that no longer exists in categoryOrder
+                 groupedExercises[uncategorizedName].push({ e: ex, idx });
+            }
         });
 
-
-        allCategories().sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase())).forEach(cat=>{
+        // Render categories in the specified order
+        categoriesInOrder.forEach(cat=>{
             const items = groupedExercises[cat];
-            if(!items || !items.length) return;
+            if(!items || items.length === 0) return; // Skip if no exercises in this category
 
             const h=document.createElement('div');
             h.className='section-header';
+            // Use category name for collapsedCategories key
             h.onclick=()=>{
                 collapsedCategories[cat]=!collapsedCategories[cat];
                 localStorage.setItem('collapsedCategories',JSON.stringify(collapsedCategories));
@@ -992,20 +1249,21 @@
                 cont.appendChild(d);
             }
         });
-         // Handle exercises whose category might no longer exist or is "Uncategorized"
-        if (groupedExercises["Uncategorized"] && groupedExercises["Uncategorized"].length > 0) {
-             const cat = "Uncategorized";
-             const items = groupedExercises[cat];
+
+         // Always render Uncategorized at the end if it has exercises
+        if (groupedExercises[uncategorizedName].length > 0) {
+             const items = groupedExercises[uncategorizedName];
              const h=document.createElement('div');
             h.className='section-header';
+            // Use "Uncategorized" as the key for collapsed state
             h.onclick=()=>{
-                collapsedCategories[cat]=!collapsedCategories[cat];
+                collapsedCategories[uncategorizedName]=!collapsedCategories[uncategorizedName];
                 localStorage.setItem('collapsedCategories',JSON.stringify(collapsedCategories));
                 renderExercises();
             };
-            h.innerHTML=`<h2>${cat}</h2><span>${collapsedCategories[cat]?'+':'-'}</span>`;
+            h.innerHTML=`<h2>${uncategorizedName}</h2><span>${collapsedCategories[uncategorizedName]?'+':'-'}</span>`;
             cont.appendChild(h);
-            if(!collapsedCategories[cat]){
+            if(!collapsedCategories[uncategorizedName]){
                 const d=document.createElement('div');
                 d.className='section-content';
                 items.forEach(({e,idx})=>d.appendChild(renderExerciseRow(e, idx)));
@@ -1020,8 +1278,9 @@
         exercises.forEach((e,idx)=>{
             if (e.schedule) {
                 Object.entries(e.schedule).forEach(([dayIndex,count])=>{
-                    if(WEEKDAYS[dayIndex] && count > 0) {
-                       byDay[WEEKDAYS[dayIndex]].push({e, idx, count});
+                    const dayIndexInt = parseInt(dayIndex);
+                    if(!isNaN(dayIndexInt) && WEEKDAYS[dayIndexInt] && count > 0) {
+                       byDay[WEEKDAYS[dayIndexInt]].push({e, idx, count});
                     }
                 });
             }
@@ -1031,6 +1290,7 @@
             if(!dayItems.length)return;
             const h=document.createElement('div');
             h.className='section-header';
+            // Use day name for collapsedCategories key
             h.onclick=()=>{
                 collapsedCategories[day]=!collapsedCategories[day];
                 localStorage.setItem('collapsedCategories',JSON.stringify(collapsedCategories));
@@ -1124,7 +1384,7 @@
             if (ex.schedule) {
                 Object.entries(ex.schedule).forEach(([dayIndexStr, setCount]) => {
                     const dayIndex = parseInt(dayIndexStr);
-                    if (dayIndex >= 0 && dayIndex < WEEKDAYS.length) {
+                    if (!isNaN(dayIndex) && dayIndex >= 0 && dayIndex < WEEKDAYS.length) {
                         totalSets += setCount;
                         const dayKey = WEEKDAYS[dayIndex];
                         if (dayKey) {
@@ -1156,7 +1416,18 @@
         }
         ex.schedule = newSchedule;
         if (!ex.progress || typeof ex.progress !== 'object') ex.progress = {};
-        delete ex.weekdays; delete ex.days;
+        // Clean up old/unused properties if they exist
+        delete ex.weekdays;
+        if (ex.days && Array.isArray(ex.days)) { // Migrate old days array format to schedule object if found
+             if (Object.keys(ex.schedule).length === 0) { // Only migrate if schedule is empty
+                ex.days.forEach(dayIdx => {
+                    if (!isNaN(dayIdx) && dayIdx >= 0 && dayIdx < WEEKDAYS.length) {
+                        ex.schedule[dayIdx] = 1; // Assume 1 set if migrating from old format
+                    }
+                });
+             }
+             delete ex.days;
+        }
         return ex;
     }
 
@@ -1201,6 +1472,7 @@
         sel.innerHTML = '';
         const sortedProfileNames = Object.keys(profiles).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()));
 
+
         if (sortedProfileNames.length === 0) { // Should be caught by loadProfiles
             profiles["Default"] = []; currentProfile = "Default";
             localStorage.setItem("currentProfile", currentProfile); localStorage.setItem("profiles", JSON.stringify(profiles));
@@ -1224,8 +1496,8 @@
             exercises = (profiles[currentProfile] || []).map(ensureScheduleFormat);
             renderExercises();
             populateExerciseCategoryDropdown();
-        } else if (Object.keys(profiles).length > 0) { // Fallback to first profile
-            currentProfile = Object.keys(profiles)[0];
+        } else if (Object.keys(profiles).length > 0) { // Fallback to first profile (alphabetical)
+            currentProfile = Object.keys(profiles).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))[0];
             localStorage.setItem("currentProfile", currentProfile);
             document.getElementById("profile-select").value = currentProfile;
             exercises = (profiles[currentProfile] || []).map(ensureScheduleFormat);
@@ -1288,17 +1560,15 @@
             cancelRenameBtn.style.display = 'none';
 
             const deleteBtn = document.createElement('button');
-             /* --- START Modifications --- */
-            deleteBtn.textContent = 'x'; // Changed to 'x'
-             /* --- END Modifications --- */
+            deleteBtn.textContent = 'x';
             deleteBtn.className = 'modal-button delete';
-            deleteBtn.disabled = (Object.keys(profiles).length <= 1 && originalName.toLowerCase() === "default");
-            
+            deleteBtn.disabled = (Object.keys(profiles).length <= 1); // Disable delete if only one profile exists
+
             const controlsDiv = document.createElement('div'); // To group buttons
             controlsDiv.style.display = 'flex'; controlsDiv.style.alignItems = 'center'; controlsDiv.style.gap = '8px';
             controlsDiv.appendChild(renameBtn); controlsDiv.appendChild(saveRenameBtn);
             controlsDiv.appendChild(cancelRenameBtn); controlsDiv.appendChild(deleteBtn);
-            
+
             item.appendChild(nameSpan); item.appendChild(nameInput); item.appendChild(controlsDiv);
             list.appendChild(item);
 
@@ -1328,11 +1598,12 @@
                     cancelRenameBtn.onclick(); return;
                 }
                 for (const existingProfileName in profiles) {
-                    if (existingProfileName.toLowerCase() === newNameTrimmed.toLowerCase() && existingProfileName !== originalName) {
+                    if (existingProfileName.toLowerCase() === newNameTrimmed.toLowerCase() && existingProfileName.toLowerCase() !== originalName.toLowerCase()) {
                         alert(`Profile name "${newNameTrimmed}" already exists or conflicts with another profile.`);
                         nameInput.focus(); return;
                     }
                 }
+                 // Case-insensitive rename check passed, perform the rename
                 const profileData = profiles[originalName];
                 delete profiles[originalName];
                 profiles[newNameTrimmed] = profileData;
@@ -1351,17 +1622,17 @@
                 }
             };
             deleteBtn.onclick = function() {
-                if (deleteBtn.disabled) { alert("Cannot delete the last default profile."); return;}
+                if (deleteBtn.disabled) { alert("Cannot delete the last profile."); return;}
                 if (confirm(`Delete profile "${originalName}"? This cannot be undone.`)) {
                     const nameToDelete = originalName;
                     delete profiles[nameToDelete];
                     let profileSwitchedOrRefreshed = false;
                     if (currentProfile === nameToDelete) {
-                        currentProfile = Object.keys(profiles)[0] || "Default";
+                        currentProfile = Object.keys(profiles).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))[0] || "Default"; // Switch to the first alphabetical
                         localStorage.setItem('currentProfile', currentProfile);
                         profileSwitchedOrRefreshed = true;
                     }
-                    if(Object.keys(profiles).length === 0) {
+                    if(Object.keys(profiles).length === 0) { // Should technically not happen with the check above, but as a fallback
                         profiles["Default"] = []; currentProfile = "Default";
                         localStorage.setItem("currentProfile", currentProfile);
                         profileSwitchedOrRefreshed = true;
@@ -1396,10 +1667,32 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         loadProfiles(); loadProfileOptions();
+        loadCategoryOrder(); // Load the universal category order
         exercises = (profiles[currentProfile] || []).map(ensureScheduleFormat);
-        renderExercises(); populateExerciseCategoryDropdown();
-        isWeekly = true;
+        isWeekly = localStorage.getItem('isWeeklyView') === 'true'; // Load view mode preference
+        renderExercises(); // Render using the loaded category order
+        populateExerciseCategoryDropdown(); // Populate dropdown using the loaded order
     });
+
+    // Save view mode preference when toggled
+    const originalToggleViewMode = toggleViewMode;
+    toggleViewMode = () => {
+        originalToggleViewMode();
+        localStorage.setItem('isWeeklyView', isWeekly);
+    };
+
+    // Initial migration check for old customCategories storage (will run on first load after update)
+    if (localStorage.getItem('customCategories') !== null && localStorage.getItem('categoryOrder') === null) {
+         console.log("Migrating old customCategories to new categoryOrder...");
+         loadCategoryOrder(); // This function handles the migration logic
+         // The new categoryOrder will be saved by loadCategoryOrder
+         // Old customCategories will be removed by loadCategoryOrder
+    } else {
+         // If no migration needed or already done, just load the order
+         loadCategoryOrder();
+    }
+
+
   </script>
 </body>
 </html>
