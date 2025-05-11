@@ -4,6 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Training Arc: GtG Loop Tracker</title>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none';">
   <style>
   /* Reset and base */
   *, *::before, *::after { box-sizing: border-box; }
@@ -588,16 +589,39 @@
             alert("No exercises or categories to export for the current profile.");
             return;
         }
-        const profileName = currentProfile.replace(/\s+/g, '_');
+        const profileName = currentProfile; // Use the actual profile name from the app
+
+        // --- Code to truncate and sanitize profile name for filename ---
+        const MAX_FILENAME_PROFILE_LENGTH = 40; // Keep the max length limit
+        let truncatedProfileName = profileName.length > MAX_FILENAME_PROFILE_LENGTH
+            ? profileName.substring(0, MAX_FILENAME_PROFILE_LENGTH)
+            : profileName;
+
+        // Sanitize the profile name for filename compatibility (remove spaces, remove illegal chars)
+        // Removing spaces to meet the 'no space in between' requirement for the entire filename
+        const sanitizedProfileName = truncatedProfileName.replace(/[\s]/g, '').replace(/[^a-zA-Z0-9_\-.]/g, '');
+        // --- End truncation and sanitization code ---
+
         const exportData = {
-            profileName: currentProfile,
+            profileName: currentProfile, // Keep the original, full name inside the file data
             exercises: exercises,
             categoryOrder: categoryOrder, // Export the category order
             viewSettings: { isWeekly: isWeekly }
         };
+
         const a=document.createElement('a');
         a.href='data:text/json;charset=utf-8,'+encodeURIComponent(JSON.stringify(exportData));
-        a.download= `${profileName}_GTGtracker_export_${new Date().toISOString().slice(0,10)}.json`;
+
+        // --- Modified Filename Format: ProfilenameYYMMDD.json ---
+        const now = new Date();
+        const year = now.getFullYear().toString().slice(-2); // Get last 2 digits of year
+        const month = (now.getMonth() + 1).toString().padStart(2, '0'); // Get month (0-11) and pad
+        const day = now.getDate().toString().padStart(2, '0'); // Get day and pad
+        const yymmdd = `${year}${month}${day}`; // Combine into YYMMDD
+
+        a.download= `${sanitizedProfileName}${yymmdd}.json`; // Combine sanitized name and YYMMDD directly
+        // --- End Modified Filename Format ---
+
         a.click();
     }
 
@@ -1086,7 +1110,7 @@
         // Try to reselect previous value, or first if not found
         if (categoriesToDisplay.map(c => c.toLowerCase()).includes(currentCatValue.toLowerCase())) {
             const actualCat = categoriesToDisplay.find(c => c.toLowerCase() === currentCatValue.toLowerCase());
-            catSel.value = actualCat || categoriesToDisplay[0];
+            catSel.value = actualCat;
         } else {
             catSel.selectedIndex = 0; // Default to first
         }
@@ -1240,7 +1264,15 @@
                 localStorage.setItem('collapsedCategories',JSON.stringify(collapsedCategories));
                 renderExercises();
             };
-            h.innerHTML=`<h2>${cat}</h2><span>${collapsedCategories[cat]?'+':'-'}</span>`;
+            // --- MODIFIED: Use textContent for category name, create span separately ---
+            const h2 = document.createElement('h2');
+            h2.textContent = cat; // Use textContent - SAFE
+            const span = document.createElement('span');
+            span.textContent = collapsedCategories[cat]?'+':'-'; // Use textContent - SAFE
+            h.appendChild(h2);
+            h.appendChild(span);
+            // --- END MODIFIED ---
+
             cont.appendChild(h);
             if(!collapsedCategories[cat]){
                 const d=document.createElement('div');
@@ -1261,7 +1293,15 @@
                 localStorage.setItem('collapsedCategories',JSON.stringify(collapsedCategories));
                 renderExercises();
             };
-            h.innerHTML=`<h2>${uncategorizedName}</h2><span>${collapsedCategories[uncategorizedName]?'+':'-'}</span>`;
+            // --- MODIFIED: Use textContent for category name, create span separately ---
+            const h2 = document.createElement('h2');
+            h2.textContent = uncategorizedName; // Use textContent - SAFE
+            const span = document.createElement('span');
+            span.textContent = collapsedCategories[uncategorizedName]?'+':'-'; // Use textContent - SAFE
+            h.appendChild(h2);
+            h.appendChild(span);
+            // --- END MODIFIED ---
+
             cont.appendChild(h);
             if(!collapsedCategories[uncategorizedName]){
                 const d=document.createElement('div');
@@ -1296,7 +1336,15 @@
                 localStorage.setItem('collapsedCategories',JSON.stringify(collapsedCategories));
                 renderExercises();
             };
-            h.innerHTML=`<h2>${day}</h2><span>${collapsedCategories[day]?'+':'-'}</span>`;
+            // --- MODIFIED: Use textContent for day name, create span separately ---
+            const h2 = document.createElement('h2');
+            h2.textContent = day; // Use textContent - SAFE (day names are static)
+            const span = document.createElement('span');
+            span.textContent = collapsedCategories[day]?'+':'-'; // Use textContent - SAFE
+            h.appendChild(h2);
+            h.appendChild(span);
+            // --- END MODIFIED ---
+
             cont.appendChild(h);
             if(!collapsedCategories[day]){
                 const d=document.createElement('div');
@@ -1452,7 +1500,7 @@
         }
         currentProfile = localStorage.getItem("currentProfile") || Object.keys(profiles)[0] || "Default";
         if (!profiles[currentProfile]) {
-            currentProfile = Object.keys(profiles)[0] || "Default";
+            currentProfile = Object.keys(profiles).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))[0] || "Default";
             if (!profiles[currentProfile] && Object.keys(profiles).length === 0) { // If profiles is truly empty
                  profiles["Default"] = [];
                  currentProfile = "Default";
