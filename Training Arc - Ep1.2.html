@@ -244,7 +244,7 @@
   }
   .exercise-row .header-row {
     display: flex;
-    justify-content: space-between;
+    justify-content: space-between; /* Keeps name and edit button apart */
     align-items: center;
     margin-bottom: 6px;
   }
@@ -252,13 +252,17 @@
     font-size: 1.05rem;
     font-weight: 500;
     color: #222;
+    /* Removed flex properties - headerRow handles spacing */
   }
-  .reps-duration {
+
+  .reps-duration { /* This class now styles the combined weight/reps/duration line */
     color: #777;
     font-size: 0.9rem;
     margin-top: 4px;
     margin-bottom: 8px;
   }
+
+
   .weekday-row {
     display: flex;
     align-items: center;
@@ -455,6 +459,44 @@
   #schedule-inputs .modal-label { margin-bottom: 4px; font-size: 0.85rem; }
   #schedule-inputs .modal-number { margin-bottom: 0; text-align: center; }
 
+  /* Custom style for grey zero */
+  .modal-number.grey-zero {
+    color: #aaa; /* Light grey color */
+  }
+  .modal-number:focus.grey-zero {
+    color: #333; /* Change back to normal text color on focus */
+  }
+
+  /* Style for reps/duration input group */
+  .reps-duration-input-group {
+    display: flex;
+    align-items: center; /* Vertically center items in the flex container */
+    gap: 10px; /* Space between inputs and 'or' */
+    margin-bottom: 15px;
+  }
+   .reps-duration-input-group > span {
+       align-self: center; /* Explicitly center the 'or' text itself */
+       font-size: 0.9rem;
+       color: #555;
+       flex-shrink: 0; /* Prevent 'or' from shrinking */
+       padding-top: 18px; /* Add padding to align 'or' with the bottom of labels */
+   }
+  .reps-duration-input-group .modal-input,
+  .reps-duration-input-group .modal-number {
+    margin-bottom: 0; /* Remove bottom margin when in group */
+  }
+  .reps-duration-input-group .input-container {
+      flex-grow: 1; /* Allow inputs to grow */
+  }
+  .reps-duration-input-group .input-container label {
+      display: block; /* Ensure label is above input */
+      margin-bottom: 4px; /* Space between label and input */
+      font-size: 0.85rem; /* Smaller label font */
+      color: #444;
+      font-weight: 500;
+  }
+
+
 </style>
 </head>
 <body>
@@ -499,8 +541,21 @@
     <input class="modal-input" type="text" id="ex-name" placeholder="e.g., Push-ups" />
     <label class="modal-label" for="ex-cat">Category</label>
     <select class="modal-input modal-select" id="ex-cat"></select>
-    <label class="modal-label" for="ex-reps">Reps / Duration</label>
-    <input class="modal-input" type="text" id="ex-reps" placeholder="e.g., 3x10 or 30s" />
+
+    <label class="modal-label" for="ex-weight-num">Weight</label>
+    <input class="modal-number modal-input" type="number" min="0" id="ex-weight-num" placeholder="e.g., 50" />
+
+
+    <div class="reps-duration-input-group">
+        <div class="input-container">
+            <label for="ex-reps-num">Reps</label> <input class="modal-number modal-input" type="number" min="0" id="ex-reps-num" placeholder="e.g., 10" />
+        </div>
+        <span>or</span>
+        <div class="input-container">
+             <label for="ex-duration-text">Duration</label> <input class="modal-input" type="text" id="ex-duration-text" placeholder="e.g., 30s" /> </div>
+    </div>
+
+
     <label class="modal-label">Sets per Weekday</label>
     <div id="schedule-inputs"></div>
     <div class="modal-actions">
@@ -581,7 +636,7 @@
     // --- DRAG & DROP & CATEGORY MANAGEMENT END ---
 
     function toggleMenu(){ document.getElementById('dropdown-menu').classList.toggle('show'); }
-    function toggleViewMode(){ isWeekly=!isWeekly; document.getElementById('dropdown-menu').classList.remove('show'); renderExercises(); }
+    function toggleViewMode(){ isWeekly=!isWeekly; localStorage.setItem('isWeeklyView', isWeekly); document.getElementById('dropdown-menu').classList.remove('show'); renderExercises(); } // Save view mode here
 
     function exportExercises(){
         toggleMenu();
@@ -606,7 +661,11 @@
             profileName: currentProfile, // Keep the original, full name inside the file data
             exercises: exercises,
             categoryOrder: categoryOrder, // Export the category order
-            viewSettings: { isWeekly: isWeekly }
+            viewSettings: {
+                 isWeekly: isWeekly,
+                 // Also export the collapsed state for the current profile
+                 collapsedCategories: JSON.parse(localStorage.getItem('collapsedCategories_' + currentProfile)) || {}
+            }
         };
 
         const a=document.createElement('a');
@@ -746,8 +805,22 @@
 
                         if (importedData.viewSettings && typeof importedData.viewSettings.isWeekly === 'boolean') {
                             isWeekly = importedData.viewSettings.isWeekly;
-                            localStorage.setItem('isWeeklyView', isWeekly); // Save imported view mode
+                             localStorage.setItem('isWeeklyView', isWeekly); // Save imported view mode
                         }
+                         // Restore collapsed state from imported data if available, save to profile-specific key
+                         if (importedData.viewSettings && importedData.viewSettings.collapsedCategories) {
+                              collapsedCategories = importedData.viewSettings.collapsedCategories;
+                              localStorage.setItem('collapsedCategories_' + currentProfile, JSON.stringify(collapsedCategories));
+                         } else {
+                              // If imported data doesn't have collapsed state, load current profile's state
+                              try {
+                                  collapsedCategories = JSON.parse(localStorage.getItem('collapsedCategories_' + currentProfile)) || {};
+                              } catch (e) {
+                                   console.error("Error loading collapsed state during import fallback for profile", currentProfile, e);
+                                   collapsedCategories = {}; // Fallback to empty
+                              }
+                         }
+
                         renderExercises();
                         // populateExerciseCategoryDropdown(); // Called during category import handling
                         alert("Data imported successfully to profile: " + currentProfile + "!");
@@ -761,9 +834,16 @@
 
     function clearExercises(){
         toggleMenu();
-        if (exercises.length === 0) { alert("No exercises to clear."); return; }
+        // console.log("Clear exercises initiated for profile:", currentProfile); // Removed debug log
+        if (exercises.length === 0) {
+            alert("No exercises to clear.");
+            return;
+        }
         if(confirm(`Are you sure you want to clear all exercises for the current profile "${currentProfile}"? This cannot be undone.`)){
-            exercises=[]; saveExercises(); renderExercises();
+            exercises=[]; // Clears the in-memory exercises array
+            // console.log("Exercises array after clearing:", exercises); // Removed debug log
+            saveExercises(); // Saves the empty exercises array
+            renderExercises(); // Re-renders the display
         }
     }
     function openCatModal(){
@@ -1095,13 +1175,13 @@
              // --- DRAG & DROP & CATEGORY MANAGEMENT START ---
              // Disable the select if no categories
             catSel.disabled = true;
-             // --- DRAG & DROP & CATEGORY MANAGEMENT END ---
+             // --- DRAG & DROP & CATEGEMENT END ---
             return;
         }
 
          // --- DRAG & DROP & CATEGORY MANAGEMENT START ---
         catSel.disabled = false;
-         // --- DRAG & DROP & CATEGORY MANAGEMENT END ---
+         // --- DRAG & DROP & CATEGEMENT END ---
 
         categoriesToDisplay.forEach(c => {
             catSel.add(new Option(c, c));
@@ -1128,7 +1208,10 @@
         document.getElementById('modal').classList.add('active');
         const nameInput=document.getElementById('ex-name');
         const catSel=document.getElementById('ex-cat');
-        const repsInput=document.getElementById('ex-reps');
+        const weightNumInput=document.getElementById('ex-weight-num'); // New weight input
+        const repsNumInput=document.getElementById('ex-reps-num'); // New reps input
+        const durationTextInput=document.getElementById('ex-duration-text'); // New duration input
+
         const modalTitle = document.getElementById('modal-title-ex');
 
         populateExerciseCategoryDropdown(); // Ensure dropdown is fresh
@@ -1153,16 +1236,26 @@
                 // catSel already shows "No Categories Available" from populateExerciseCategoryDropdown
             }
 
-            repsInput.value=ex.reps||'';
+            // Populate new weight field
+            weightNumInput.value = (ex.weight !== undefined && ex.weight !== null) ? ex.weight : ''; // Use new weight property
+
+            // Populate new reps/duration fields
+            repsNumInput.value = (ex.reps !== undefined && ex.reps !== null) ? ex.reps : ''; // Use new reps property
+            durationTextInput.value = (ex.duration !== undefined && ex.duration !== null) ? ex.duration : ''; // Use new duration property
+
+
             document.getElementById('delete-btn').style.display='inline-block';
         } else { // Adding new exercise
             modalTitle.textContent = "Add Exercise";
             nameInput.value='';
             if (allCategories().length > 0) catSel.selectedIndex = 0;
             // else catSel shows "No Categories Available"
-            repsInput.value='';
+            weightNumInput.value = ''; // Clear new weight input
+            repsNumInput.value = ''; // Clear new reps input
+            durationTextInput.value = ''; // Clear new duration input
             document.getElementById('delete-btn').style.display='none';
         }
+
         const schedDiv=document.getElementById('schedule-inputs');
         schedDiv.innerHTML='';
         WEEKDAYS.forEach((day,i)=>{
@@ -1172,7 +1265,50 @@
             const num=document.createElement('input');
             num.type='number'; num.min='0'; num.max='20';
             num.className='modal-number modal-input'; num.id=`sch_${i}`;
-            num.value=(idx!==null && exercises[idx].schedule && exercises[idx].schedule[i]) ? exercises[idx].schedule[i] : 0;
+            // Get scheduled sets for this day, default to 0
+            const scheduledSets = (idx!==null && exercises[idx].schedule && exercises[idx].schedule[i]) ? exercises[idx].schedule[i] : 0;
+            num.value = scheduledSets;
+
+            // Add grey-zero class if value is 0
+            if (parseInt(num.value) === 0) { // Check parsed value just in case input starts with non-numeric leading chars (though type="number" prevents this)
+                num.classList.add('grey-zero');
+            }
+
+
+            // Add event listeners for grey-zero behavior
+            num.addEventListener('focus', function() {
+                this.classList.remove('grey-zero'); // Remove grey class on focus
+                 // If value is 0, select the text to make typing over it easy
+                 if (parseInt(this.value) === 0) {
+                     this.select();
+                 }
+            });
+
+            num.addEventListener('blur', function() {
+                // If value is empty or parsed as 0, set to "0" and add grey class
+                const val = parseInt(this.value);
+                if (this.value.trim() === '' || isNaN(val) || val <= 0) {
+                     this.value = 0;
+                    this.classList.add('grey-zero');
+                } else {
+                     // Ensure value is a positive number, remove grey class
+                    this.value = val; // Set value to the parsed integer to clean it up
+                    this.classList.remove('grey-zero');
+                }
+            });
+
+             num.addEventListener('input', function() {
+                // Remove grey class if user starts typing a non-zero number
+                const val = parseInt(this.value);
+                if (!isNaN(val) && val > 0) {
+                    this.classList.remove('grey-zero');
+                } else if (this.value.trim() === '0') {
+                     this.classList.add('grey-zero');
+                 }
+                 // If input becomes empty (e.g., backspace), the blur listener will handle setting back to 0
+            });
+
+
             dayContainer.appendChild(lbl); dayContainer.appendChild(num);
             schedDiv.appendChild(dayContainer);
         });
@@ -1190,17 +1326,52 @@
         if(!name){ alert("Please enter an exercise name."); return; }
         const category=document.getElementById('ex-cat').value;
         if(!category || category === "" || category === "No Categories Available"){ alert("Please select or create a category."); return; }
-        const reps=document.getElementById('ex-reps').value.trim();
+
+        // Get value from new weight field
+        const weightNumValue = parseFloat(document.getElementById('ex-weight-num').value); // Use parseFloat for potentially decimal weights
+        let weight = null;
+        if (!isNaN(weightNumValue) && weightNumValue >= 0) { // Allow saving 0 weight
+             weight = weightNumValue;
+        }
+
+
+        // Get values from new reps/duration fields
+        const repsNumValue = parseInt(document.getElementById('ex-reps-num').value);
+        const durationTextValue = document.getElementById('ex-duration-text').value.trim();
+
+        let reps = null;
+        let duration = null;
+
+        // Determine whether to save reps or duration
+        if (!isNaN(repsNumValue) && repsNumValue >= 0) { // Allow saving 0 reps
+            reps = repsNumValue;
+            duration = null; // Ensure duration is null if reps is set
+        } else if (durationTextValue !== '') {
+            duration = durationTextValue;
+            reps = null; // Ensure reps is null if duration is set
+        }
+
+        // Optional: Alert if neither weight, reps nor duration is entered?
+        // if (weight === null && reps === null && duration === null) {
+        //     alert("Please enter weight, reps, or duration.");
+        //     return;
+        // }
+
+
         const sched={};
         WEEKDAYS.forEach((_,i)=>{
             const valInput = document.getElementById(`sch_${i}`);
             if (valInput) {
-                const v=parseInt(valInput.value)||0;
+                // Use the potentially greyed value, parse as int
+                const v=parseInt(valInput.value)||0; // parseInt("") is NaN, ||0 handles this
                 if(v>0) sched[i]=v;
             }
         });
         if(Object.keys(sched).length === 0 && !confirm("This exercise has no scheduled days. Save anyway?")) return;
-        const obj={name,category,reps,schedule:sched,progress:{}};
+
+        // Save with new weight, reps, duration properties
+        const obj={name,category,weight,reps,duration,schedule:sched,progress:{}};
+
         if(editIndex!==null) exercises[editIndex]=obj;
         else exercises.push(obj);
         saveExercises(); closeModal(); renderExercises();
@@ -1214,6 +1385,7 @@
     };
 
     function renderExercises(){
+        // console.log("Rendering exercises. Current exercises array:", exercises); // Removed debug log
         document.getElementById('view-headline').textContent = isWeekly ? 'Weekly Planner' : 'Exercise Overview';
         const c=document.getElementById('tracker-content');
         c.innerHTML='';
@@ -1221,6 +1393,13 @@
             c.innerHTML = `<p style="text-align:center; color:#777; margin-top:30px;">No exercises for "${currentProfile}". Click "Add New Exercise".</p>`;
             updateProgress(); return;
         }
+        // Ensure collapsedCategories is loaded/initialized before rendering
+        if (typeof collapsedCategories !== 'object' || collapsedCategories === null) {
+             // This case should ideally not happen if load logic is correct, but as fallback
+             console.warn("collapsedCategories was not loaded correctly, initializing empty.");
+             collapsedCategories = {}; // Default to empty object if not loaded
+        }
+
         if(isWeekly) renderWeekly(c);
         else renderByCategory(c);
         updateProgress();
@@ -1260,20 +1439,25 @@
             h.className='section-header';
             // Use category name for collapsedCategories key
             h.onclick=()=>{
+                // Ensure collapsedCategories is an object before toggling
+                if (typeof collapsedCategories !== 'object' || collapsedCategories === null) collapsedCategories = {};
                 collapsedCategories[cat]=!collapsedCategories[cat];
-                localStorage.setItem('collapsedCategories',JSON.stringify(collapsedCategories));
-                renderExercises();
+                // Save to profile-specific key
+                localStorage.setItem('collapsedCategories_' + currentProfile, JSON.stringify(collapsedCategories));
+                renderExercises(); // Rerender to show/hide content
             };
             // --- MODIFIED: Use textContent for category name, create span separately ---
             const h2 = document.createElement('h2');
             h2.textContent = cat; // Use textContent - SAFE
             const span = document.createElement('span');
+            // Check collapsed state from the loaded/saved object
             span.textContent = collapsedCategories[cat]?'+':'-'; // Use textContent - SAFE
             h.appendChild(h2);
             h.appendChild(span);
             // --- END MODIFIED ---
 
             cont.appendChild(h);
+            // Check collapsed state from the loaded/saved object before rendering content
             if(!collapsedCategories[cat]){
                 const d=document.createElement('div');
                 d.className='section-content';
@@ -1289,20 +1473,25 @@
             h.className='section-header';
             // Use "Uncategorized" as the key for collapsed state
             h.onclick=()=>{
+                 // Ensure collapsedCategories is an object before toggling
+                 if (typeof collapsedCategories !== 'object' || collapsedCategories === null) collapsedCategories = {};
                 collapsedCategories[uncategorizedName]=!collapsedCategories[uncategorizedName];
-                localStorage.setItem('collapsedCategories',JSON.stringify(collapsedCategories));
-                renderExercises();
+                // Save to profile-specific key
+                localStorage.setItem('collapsedCategories_' + currentProfile, JSON.stringify(collapsedCategories));
+                renderExercises(); // Re-render to show/hide content
             };
             // --- MODIFIED: Use textContent for category name, create span separately ---
             const h2 = document.createElement('h2');
             h2.textContent = uncategorizedName; // Use textContent - SAFE
             const span = document.createElement('span');
+            // Check collapsed state from the loaded/saved object
             span.textContent = collapsedCategories[uncategorizedName]?'+':'-'; // Use textContent - SAFE
             h.appendChild(h2);
             h.appendChild(span);
             // --- END MODIFIED ---
 
             cont.appendChild(h);
+            // Check collapsed state from the loaded/saved object before rendering content
             if(!collapsedCategories[uncategorizedName]){
                 const d=document.createElement('div');
                 d.className='section-content';
@@ -1332,20 +1521,25 @@
             h.className='section-header';
             // Use day name for collapsedCategories key
             h.onclick=()=>{
+                 // Ensure collapsedCategories is an object before toggling
+                 if (typeof collapsedCategories !== 'object' || collapsedCategories === null) collapsedCategories = {};
                 collapsedCategories[day]=!collapsedCategories[day];
-                localStorage.setItem('collapsedCategories',JSON.stringify(collapsedCategories));
-                renderExercises();
+                // Save to profile-specific key
+                localStorage.setItem('collapsedCategories_' + currentProfile, JSON.stringify(collapsedCategories));
+                renderExercises(); // Rerender to show/hide content
             };
             // --- MODIFIED: Use textContent for day name, create span separately ---
             const h2 = document.createElement('h2');
             h2.textContent = day; // Use textContent - SAFE (day names are static)
             const span = document.createElement('span');
+            // Check collapsed state from the loaded/saved object
             span.textContent = collapsedCategories[day]?'+':'-'; // Use textContent - SAFE
             h.appendChild(h2);
             h.appendChild(span);
             // --- END MODIFIED ---
 
             cont.appendChild(h);
+            // Check collapsed state from the loaded/saved object before rendering content
             if(!collapsedCategories[day]){
                 const d=document.createElement('div');
                 d.className='section-content';
@@ -1357,21 +1551,53 @@
 
     function renderExerciseRow(exercise, index, repsCountForDay, dayKey){
         const row=document.createElement('div'); row.className='exercise-row';
-        const headerRow=document.createElement('div'); headerRow.className='header-row';
+        const headerRow=document.createElement('div'); headerRow.className='header-row'; // flex container
+
         const nameDiv=document.createElement('div'); nameDiv.className='name'; nameDiv.textContent=exercise.name;
+
+        // Controls (edit button) - remains a separate flex item, auto margin pushes it right
         const controlsDiv = document.createElement('div');
         const editBtn=document.createElement('button');
         editBtn.className='edit-button'; editBtn.textContent='edit';
         editBtn.onclick=(e)=>{ e.stopPropagation(); openModal(index); };
         controlsDiv.appendChild(editBtn);
-        headerRow.appendChild(nameDiv); headerRow.appendChild(controlsDiv);
-        row.appendChild(headerRow);
 
-        if(exercise.reps){
-            const repsDurationDiv=document.createElement('div');
-            repsDurationDiv.className='reps-duration'; repsDurationDiv.textContent=exercise.reps;
-            row.appendChild(repsDurationDiv);
+        // Append name and controls to the header row
+        headerRow.appendChild(nameDiv);
+        headerRow.appendChild(controlsDiv); // Place controls last in the flex container
+
+
+        row.appendChild(headerRow); // Add header row to main row
+
+
+        // Display Weight, Reps, or Duration based on properties, in one line
+        const detailsParts = [];
+
+        // Add Weight if available and > 0
+        if (exercise.weight !== undefined && exercise.weight !== null && typeof exercise.weight === 'number' && exercise.weight > 0) {
+            const formattedWeight = Number.isInteger(exercise.weight) ? exercise.weight : exercise.weight.toFixed(1);
+            detailsParts.push(`${formattedWeight} kg`);
         }
+
+        // Add Reps if available and > 0
+        if (exercise.reps !== undefined && exercise.reps !== null && typeof exercise.reps === 'number' && exercise.reps > 0) {
+            detailsParts.push(`${exercise.reps} reps`);
+        }
+
+        // Add Duration if available and non-empty
+        if (exercise.duration !== undefined && exercise.duration !== null && typeof exercise.duration === 'string' && exercise.duration.trim() !== '') {
+            detailsParts.push(exercise.duration.trim()); // Trim whitespace
+        }
+
+        // Only create and append the details div if there's something to display
+        if (detailsParts.length > 0) {
+            const detailsDiv = document.createElement('div');
+            detailsDiv.className = 'reps-duration'; // Reuse the reps-duration class styling
+            detailsDiv.textContent = detailsParts.join(' / '); // Join parts with " / "
+            row.appendChild(detailsDiv);
+        }
+
+
         const checkboxGroupOuter = document.createElement('div');
 
         if(isWeekly && dayKey != null && repsCountForDay != null){
@@ -1464,6 +1690,65 @@
         }
         ex.schedule = newSchedule;
         if (!ex.progress || typeof ex.progress !== 'object') ex.progress = {};
+
+         // --- Weight Migration/Adaptation START ---
+         // Ensure weight is a number or null
+         if (ex.weight !== undefined && ex.weight !== null) {
+             const val = parseFloat(ex.weight);
+             ex.weight = !isNaN(val) && val >= 0 ? val : null;
+         } else {
+              ex.weight = null; // Ensure property exists
+         }
+         // --- Weight Migration/Adaptation END ---
+
+
+        // --- Reps/Duration Migration/Adaptation START ---
+        // If old 'reps' string exists and new 'reps'/'duration' don't, try to parse
+        if (ex.reps !== undefined && typeof ex.reps === 'string' && ex.duration === undefined) {
+             const oldRepsStr = ex.reps.trim();
+             const numValue = parseInt(oldRepsStr);
+             // Simple check: if parsing as int results in the original string (no extra text), treat as number reps
+             if (!isNaN(numValue) && numValue >= 0 && String(numValue) === oldRepsStr) {
+                 ex.reps = numValue;
+                 ex.duration = null;
+             } else if (oldRepsStr !== '') {
+                  // Otherwise, treat as duration text
+                 ex.duration = oldRepsStr;
+                 ex.reps = null;
+             } else {
+                 // Empty string
+                 ex.reps = null;
+                 ex.duration = null;
+             }
+         } else if (ex.reps === undefined && ex.duration === undefined) {
+             // If neither property exists (very old data?), default to nulls
+             ex.reps = null;
+             ex.duration = null;
+         }
+         // Ensure reps is number or null, and duration is string or null if they exist
+         if (ex.reps !== undefined && ex.reps !== null && typeof ex.reps !== 'number') {
+              const val = parseInt(ex.reps);
+              ex.reps = !isNaN(val) && val >= 0 ? val : null;
+              // If old reps was text and duration didn't exist, ensure that text goes to duration
+              if (ex.reps === null && ex.duration === undefined && typeof Object.getOwnPropertyDescriptor(ex, 'reps').value === 'string') { // Check the original property type before parsing
+                   ex.duration = Object.getOwnPropertyDescriptor(ex, 'reps').value; // Put old reps string in duration if it couldn't be parsed as number and duration didn't exist
+              } else if (ex.duration === undefined) {
+                   ex.duration = null; // Ensure duration is null if not set
+              }
+         } else if (ex.reps === undefined) { // Ensure reps is null if it didn't exist at all
+             ex.reps = null;
+         }
+
+         if (ex.duration !== undefined && ex.duration !== null && typeof ex.duration !== 'string') {
+             ex.duration = String(ex.duration); // Ensure it's a string
+         } else if (ex.duration === undefined) { // Ensure duration is null if it didn't exist at all
+             ex.duration = null;
+         }
+
+
+        // --- Reps/Duration Migration/Adaptation END ---
+
+
         // Clean up old/unused properties if they exist
         delete ex.weekdays;
         if (ex.days && Array.isArray(ex.days)) { // Migrate old days array format to schedule object if found
@@ -1476,6 +1761,15 @@
              }
              delete ex.days;
         }
+         // Clean up old string reps property if it's not the one we kept as duration
+         if (typeof Object.getOwnPropertyDescriptor(ex, 'reps') !== 'undefined' && typeof Object.getOwnPropertyDescriptor(ex, 'reps').value === 'string' && ex.duration !== Object.getOwnPropertyDescriptor(ex, 'reps').value) {
+              delete ex.reps;
+         } else if (typeof ex.reps === 'string' && ex.duration !== ex.reps) {
+             // Fallback check if getOwnPropertyDescriptor is tricky
+             delete ex.reps;
+         }
+
+
         return ex;
     }
 
@@ -1498,7 +1792,7 @@
         } else {
             profiles = { "Default": [] };
         }
-        currentProfile = localStorage.getItem("currentProfile") || Object.keys(profiles)[0] || "Default";
+        currentProfile = localStorage.getItem("currentProfile") || Object.keys(profiles).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))[0] || "Default";
         if (!profiles[currentProfile]) {
             currentProfile = Object.keys(profiles).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))[0] || "Default";
             if (!profiles[currentProfile] && Object.keys(profiles).length === 0) { // If profiles is truly empty
@@ -1542,6 +1836,34 @@
             currentProfile = selectedProfileName;
             localStorage.setItem("currentProfile", currentProfile);
             exercises = (profiles[currentProfile] || []).map(ensureScheduleFormat);
+
+            // Load or initialize collapsed state for the new profile
+             const collapsedKey = 'collapsedCategories_' + currentProfile;
+             const storedCollapsed = localStorage.getItem(collapsedKey);
+
+             if (storedCollapsed === null) {
+                 // First time loading this profile - collapse everything
+                 collapsedCategories = {};
+                 // Need categories to collapse, so ensure categoryOrder is loaded first
+                 if (categoryOrder.length === 0) loadCategoryOrder(); // Defensive check
+                 allCategories().forEach(cat => collapsedCategories[cat] = true); // Collapse categories
+                 WEEKDAYS.forEach(day => collapsedCategories[day] = true); // Collapse weekdays
+                  localStorage.setItem(collapsedKey, JSON.stringify(collapsedCategories)); // Save the newly collapsed state
+                 console.log(`Profile "${currentProfile}" loaded for the first time, collapsing sections.`);
+
+             } else {
+                // Profile has been loaded before, load saved collapsed state
+                try {
+                     collapsedCategories = JSON.parse(storedCollapsed);
+                     console.log(`Profile "${currentProfile}" loaded, restored collapsed state.`);
+                } catch (e) {
+                    console.error("Error parsing collapsed state for profile", currentProfile, e);
+                    collapsedCategories = {}; // Fallback to empty (uncollapsed) on parse error
+                    localStorage.setItem(collapsedKey, JSON.stringify(collapsedCategories)); // Save empty state
+                }
+             }
+
+
             renderExercises();
             populateExerciseCategoryDropdown();
         } else if (Object.keys(profiles).length > 0) { // Fallback to first profile (alphabetical)
@@ -1549,17 +1871,69 @@
             localStorage.setItem("currentProfile", currentProfile);
             document.getElementById("profile-select").value = currentProfile;
             exercises = (profiles[currentProfile] || []).map(ensureScheduleFormat);
+
+             // Load or initialize collapsed state for the fallback profile
+            const collapsedKey = 'collapsedCategories_' + currentProfile;
+            const storedCollapsed = localStorage.getItem(collapsedKey);
+
+             if (storedCollapsed === null) {
+                 // First time loading this profile - collapse everything
+                 collapsedCategories = {};
+                 // Need categories to collapse, so ensure categoryOrder is loaded first
+                 if (categoryOrder.length === 0) loadCategoryOrder(); // Defensive check
+                 allCategories().forEach(cat => collapsedCategories[cat] = true); // Collapse categories
+                 WEEKDAYS.forEach(day => collapsedCategories[day] = true); // Collapse weekdays
+                 localStorage.setItem(collapsedKey, JSON.stringify(collapsedCategories)); // Save the newly collapsed state
+                 console.log(`Fallback profile "${currentProfile}" loaded for the first time, collapsing sections.`);
+
+             } else {
+                // Profile has been loaded before, load saved collapsed state
+                try {
+                     collapsedCategories = JSON.parse(storedCollapsed);
+                     console.log(`Fallback profile "${currentProfile}" loaded, restored collapsed state.`);
+                } catch (e) {
+                    console.error("Error parsing collapsed state for fallback profile", currentProfile, e);
+                    collapsedCategories = {}; // Fallback to empty (uncollapsed) on parse error
+                    localStorage.setItem(collapsedKey, JSON.stringify(collapsedCategories)); // Save empty state
+                }
+             }
+
             renderExercises(); populateExerciseCategoryDropdown();
         } else { // Should not be reached if loadProfiles ensures Default exists
             console.error("No profiles available to switch to.");
         }
     }
 
+     // Save exercises AND collapsed state specific to the current profile
     function saveExercises() {
         if (!profiles[currentProfile]) profiles[currentProfile] = [];
-        profiles[currentProfile] = exercises.map(ensureScheduleFormat);
+        profiles[currentProfile] = exercises.map(ex => {
+             const savedEx = {
+                name: ex.name,
+                category: ex.category,
+                schedule: ex.schedule,
+                progress: ex.progress
+             };
+             // Save weight only if it's a non-null number >= 0
+             if (ex.weight !== undefined && ex.weight !== null && typeof ex.weight === 'number' && ex.weight >= 0) {
+                 savedEx.weight = ex.weight;
+             }
+             // Save reps only if it's a non-null number >= 0
+             if (ex.reps !== undefined && ex.reps !== null && typeof ex.reps === 'number' && ex.reps >= 0) {
+                 savedEx.reps = ex.reps;
+             }
+              // Save duration only if it's a non-null, non-empty string
+              if (ex.duration !== undefined && ex.duration !== null && typeof ex.duration === 'string' && ex.duration.trim() !== '') {
+                 savedEx.duration = ex.duration;
+             }
+             return savedEx;
+        });
         localStorage.setItem("profiles", JSON.stringify(profiles));
+         // Save collapsed state specific to the current profile
+         localStorage.setItem('collapsedCategories_' + currentProfile, JSON.stringify(collapsedCategories));
+         // console.log("Profiles object saved:", JSON.parse(localStorage.getItem("profiles"))); // Debug log removed
     }
+
 
     function openProfileModal() {
         document.getElementById('dropdown-menu').classList.remove('show');
@@ -1622,7 +1996,7 @@
 
             renameBtn.onclick = () => {
                 nameSpan.style.display = 'none';
-                nameInput.style.display = 'block'; nameInput.style.flexGrow = '1';
+                nameInput.style.display = 'block'; nameInput.style.flexGrow = "1"; // Set flex-grow here too
                 nameInput.value = nameSpan.textContent; nameInput.focus();
                 renameBtn.style.display = 'none';
                 saveRenameBtn.style.display = 'inline-block';
@@ -1631,7 +2005,7 @@
             };
             cancelRenameBtn.onclick = () => {
                 nameSpan.style.display = 'block';
-                nameInput.style.display = 'none';
+                nameInput.style.display = 'none'; nameInput.style.flexGrow = "0"; // Reset flex-grow
                 renameBtn.style.display = 'inline-block';
                 saveRenameBtn.style.display = 'none';
                 cancelRenameBtn.style.display = 'none';
@@ -1655,9 +2029,28 @@
                 const profileData = profiles[originalName];
                 delete profiles[originalName];
                 profiles[newNameTrimmed] = profileData;
+
+                 // Also rename the collapsed state key in localStorage
+                 const oldCollapsedKey = 'collapsedCategories_' + originalName;
+                 const newCollapsedKey = 'collapsedCategories_' + newNameTrimmed;
+                 const collapsedState = localStorage.getItem(oldCollapsedKey);
+                 if (collapsedState !== null) {
+                      localStorage.setItem(newCollapsedKey, collapsedState);
+                      localStorage.removeItem(oldCollapsedKey);
+                 }
+
+
                 if (currentProfile === originalName) {
                     currentProfile = newNameTrimmed;
                     localStorage.setItem("currentProfile", currentProfile);
+                     // Update the current collapsed state object reference if this was the active profile
+                    try {
+                        collapsedCategories = JSON.parse(localStorage.getItem(newCollapsedKey)) || {};
+                    } catch (e) {
+                        console.error("Error loading renamed collapsed state for profile", newNameTrimmed, e);
+                        collapsedCategories = {};
+                    }
+
                 }
                 localStorage.setItem("profiles", JSON.stringify(profiles));
                 alert(`Profile "${originalName}" renamed to "${newNameTrimmed}".`);
@@ -1674,15 +2067,36 @@
                 if (confirm(`Delete profile "${originalName}"? This cannot be undone.`)) {
                     const nameToDelete = originalName;
                     delete profiles[nameToDelete];
+
+                     // Also remove the collapsed state key from localStorage
+                     const collapsedKeyToDelete = 'collapsedCategories_' + nameToDelete;
+                     localStorage.removeItem(collapsedKeyToDelete);
+
+
                     let profileSwitchedOrRefreshed = false;
                     if (currentProfile === nameToDelete) {
                         currentProfile = Object.keys(profiles).sort((a,b)=>a.toLowerCase().localeCompare(b.toLowerCase()))[0] || "Default"; // Switch to the first alphabetical
                         localStorage.setItem('currentProfile', currentProfile);
+                         // Load collapsed state for the new current profile
+                         try {
+                             collapsedCategories = JSON.parse(localStorage.getItem('collapsedCategories_' + currentProfile)) || {};
+                         } catch (e) {
+                            console.error("Error loading collapsed state for new current profile", currentProfile, e);
+                            collapsedCategories = {};
+                         }
+
                         profileSwitchedOrRefreshed = true;
                     }
                     if(Object.keys(profiles).length === 0) { // Should technically not happen with the check above, but as a fallback
                         profiles["Default"] = []; currentProfile = "Default";
                         localStorage.setItem("currentProfile", currentProfile);
+                         // Load/initialize collapsed state for the default profile
+                         try {
+                             collapsedCategories = JSON.parse(localStorage.getItem('collapsedCategories_Default')) || {};
+                         } catch (e) {
+                             console.error("Error loading collapsed state for default profile", currentProfile, e);
+                             collapsedCategories = {};
+                         }
                         profileSwitchedOrRefreshed = true;
                     }
                     localStorage.setItem("profiles", JSON.stringify(profiles));
@@ -1695,51 +2109,83 @@
             };
         });
         document.getElementById('new-profile-name-input').value = '';
-    }
-
-    document.getElementById('add-profile-btn').onclick = function() {
-        const newProfileNameInput = document.getElementById('new-profile-name-input');
-        let newName = newProfileNameInput.value.trim();
-        if (!newName) { alert("Please enter a profile name."); return; }
-        if (Object.keys(profiles).map(p=>p.toLowerCase()).includes(newName.toLowerCase())) {
-            alert(`Profile "${newName}" already exists (case-insensitive).`); return;
-        }
-        profiles[newName] = []; currentProfile = newName;
-        localStorage.setItem("currentProfile", currentProfile);
-        localStorage.setItem("profiles", JSON.stringify(profiles));
-        exercises = []; loadProfileOptions(); populateProfileModal(); renderExercises();
-        newProfileNameInput.value = '';
-        alert(`Profile "${newName}" added and selected.`);
     };
     document.getElementById('profile-modal-overlay').onclick = closeProfileModal;
 
     document.addEventListener('DOMContentLoaded', () => {
-        loadProfiles(); loadProfileOptions();
-        loadCategoryOrder(); // Load the universal category order
-        exercises = (profiles[currentProfile] || []).map(ensureScheduleFormat);
+        loadProfiles(); loadCategoryOrder(); // Ensure categories are loaded before initializing collapsed state
+        loadProfileOptions(); // Ensure profile select is populated
+
+
+        exercises = (profiles[currentProfile] || []).map(ensureScheduleFormat); // Ensure exercises are in correct format on load
         isWeekly = localStorage.getItem('isWeeklyView') === 'true'; // Load view mode preference
-        renderExercises(); // Render using the loaded category order
+
+        // Load or initialize collapsed state for the initial profile
+        const collapsedKey = 'collapsedCategories_' + currentProfile;
+        const storedCollapsed = localStorage.getItem(collapsedKey);
+
+        if (storedCollapsed === null || storedCollapsed === undefined) { // Check for undefined too
+             // First time loading this profile - collapse everything
+             collapsedCategories = {};
+             // Need categories to collapse, so ensure categoryOrder is loaded first
+             if (categoryOrder.length === 0) loadCategoryOrder(); // Defensive check
+             allCategories().forEach(cat => collapsedCategories[cat] = true); // Collapse categories
+             WEEKDAYS.forEach(day => collapsedCategories[day] = true); // Collapse weekdays
+             localStorage.setItem(collapsedKey, JSON.stringify(collapsedCategories)); // Save the newly collapsed state
+              console.log(`Initial profile "${currentProfile}" loaded for the first time or key missing, collapsing sections.`);
+
+        } else {
+            // Profile has been loaded before, load saved collapsed state
+            try {
+                 collapsedCategories = JSON.parse(storedCollapsed);
+                 console.log(`Initial profile "${currentProfile}" loaded, restored collapsed state.`);
+            } catch (e) {
+                console.error("Error parsing collapsed state on DOMContentLoaded for profile", currentProfile, e);
+                collapsedCategories = {}; // Fallback to empty (uncollapsed) on parse error
+                localStorage.setItem(collapsedKey, JSON.stringify(collapsedCategories)); // Save empty state
+            }
+        }
+
+        renderExercises(); // Render using the loaded category order and collapsed state
         populateExerciseCategoryDropdown(); // Populate dropdown using the loaded order
+
+         // Migration check for old collapsedCategories storage (non-profile specific) - run once on load if needed
+         const oldCollapsedState = localStorage.getItem('collapsedCategories');
+         if (oldCollapsedState !== null && oldCollapsedState !== undefined) {
+             const newCollapsedKey = 'collapsedCategories_' + currentProfile;
+             const newCollapsedKeyExists = localStorage.getItem(newCollapsedKey) !== null;
+
+             // Only migrate if the old key exists and the NEW profile-specific key does NOT exist
+             if (!newCollapsedKeyExists) {
+                 console.log(`Migrating old non-profile collapsedCategories state for profile "${currentProfile}"...`);
+                 try {
+                      const stateToMigrate = JSON.parse(oldCollapsedState);
+                      if (typeof stateToMigrate === 'object' && stateToMigrate !== null) {
+                         localStorage.setItem(newCollapsedKey, JSON.stringify(stateToMigrate));
+                         console.log("Migration successful. Old key 'collapsedCategories' is now redundant.");
+                         // Optionally remove the old key after successful migration
+                         // localStorage.removeItem('collapsedCategories'); // Consider removing this after a few versions
+                      } else {
+                         console.error("Old collapsedCategories data is not a valid object, skipping migration.");
+                         // Initialize the new key as empty if migration failed
+                         localStorage.setItem(newCollapsedKey, JSON.stringify({}));
+                      }
+                 } catch(e) {
+                      console.error("Error parsing old collapsedCategories for migration:", e);
+                      // Initialize the new key as empty if migration failed
+                      localStorage.setItem(newCollapsedKey, JSON.stringify({}));
+                 }
+                 // After potential migration, reload collapsedCategories from the correct key
+                 try {
+                     collapsedCategories = JSON.parse(localStorage.getItem(newCollapsedKey)) || {};
+                 } catch (e) {
+                     console.error("Error reloading collapsed state after migration:", e);
+                     collapsedCategories = {};
+                 }
+                  renderExercises(); // Re-render to reflect potentially migrated collapsed state
+             }
+         }
     });
-
-    // Save view mode preference when toggled
-    const originalToggleViewMode = toggleViewMode;
-    toggleViewMode = () => {
-        originalToggleViewMode();
-        localStorage.setItem('isWeeklyView', isWeekly);
-    };
-
-    // Initial migration check for old customCategories storage (will run on first load after update)
-    if (localStorage.getItem('customCategories') !== null && localStorage.getItem('categoryOrder') === null) {
-         console.log("Migrating old customCategories to new categoryOrder...");
-         loadCategoryOrder(); // This function handles the migration logic
-         // The new categoryOrder will be saved by loadCategoryOrder
-         // Old customCategories will be removed by loadCategoryOrder
-    } else {
-         // If no migration needed or already done, just load the order
-         loadCategoryOrder();
-    }
-
 
   </script>
 </body>
