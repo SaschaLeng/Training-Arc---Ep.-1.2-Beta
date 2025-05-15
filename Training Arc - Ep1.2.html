@@ -4,7 +4,7 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Training Arc: GtG Loop Tracker</title>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; object-src 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; object-src 'none';">
   <style>
   /* Reset and base */
   *, *::before, *::after { box-sizing: border-box; }
@@ -108,22 +108,6 @@
     display: flex;
     align-items: center;
     gap: 8px;
-  }
-  .preset-item { /* This class is no longer used for list items in the modal */
-    padding: 5px 10px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    user-select: none;
-    color: #333;
-    transition: background-color 0.15s ease;
-    border-radius: 4px;
-    border: 1px solid #d1d5db;
-    background-color: #f9f9f9;
-  }
-  .preset-item:disabled {
-    opacity: 0.6;
-    cursor: default;
-    background-color: #e9ecef;
   }
   .dropdown-item:last-child, .modal-item:last-child { /* Removed .cat-item */
     border-bottom: none;
@@ -252,15 +236,103 @@
     font-size: 1.05rem;
     font-weight: 500;
     color: #222;
-    /* Removed flex properties - headerRow handles spacing */
+    flex-grow: 1; /* Allow name to take available space */
+    margin-right: 10px; /* Space between name and controls */
   }
 
-  .reps-duration { /* This class now styles the combined weight/reps/duration line */
+  .reps-duration { /* This class now styles the combined weight/reps/duration/timer line */
     color: #777;
     font-size: 0.9rem;
     margin-top: 4px;
     margin-bottom: 8px;
+    display: flex; /* Use flexbox to align items */
+    align-items: center; /* Vertically center */
+    gap: 10px; /* Space between details and timer elements */
+    flex-wrap: wrap; /* Allow wrapping on smaller screens */
   }
+
+    /* Timer specific styles (Modified) */
+    .timer-control {
+        /* Remove padding, border, background for icon appearance */
+        padding: 0;
+        border: none;
+        background-color: transparent;
+        border-radius: 0; /* Remove border-radius */
+
+        font-size: 0.85rem; /* Still keeps text size small for 'Stop' */
+        cursor: pointer;
+        transition: opacity 0.2s ease; /* Transition opacity */
+        line-height: 1; /* Compact */
+        flex-shrink: 0; /* Prevent shrinking */
+        display: flex; /* Use flex for centering icon */
+        align-items: center; /* Vertically center icon */
+        justify-content: center; /* Horizontally center icon */
+        min-width: 30px; /* Give icon button a minimum size */
+        min-height: 30px; /* Give icon button a minimum size */
+        color: #555; /* Default icon color */
+    }
+    .timer-control svg {
+        fill: currentColor; /* Use button text color for icon */
+    }
+    .timer-control:hover {
+        opacity: 0.7; /* Hover effect: less opaque */
+    }
+     .timer-control:disabled {
+         color: #cccccc; /* Grey color for disabled icon */
+         cursor: not-allowed;
+         opacity: 1; /* Disabled items are usually not semi-transparent */
+     }
+
+    .timer-control.start-grey {
+        color: #6c757d; /* Grey color for Start icon */
+    }
+     .timer-control.start-grey:hover:not(:disabled) {
+        color: #5a6268; /* Darker grey on hover */
+    }
+
+
+    .timer-control.stop {
+        color: magenta; /* Magenta color for Stop text */
+        /* No icon for stop, just text */
+        padding: 4px 8px; /* Re-add a bit of padding for text button */
+         min-width: auto; /* Allow text button to size naturally */
+    }
+     .timer-control.stop:hover:not(:disabled) {
+        color: #cc0099; /* Darker magenta on hover */
+    }
+
+
+    .timer-display {
+        font-size: 0.9rem;
+        font-weight: bold;
+        /* Updated color to match Add Exercise button */
+        color: #00BFFF;
+        min-width: 50px; /* Give it some minimal width */
+        text-align: right; /* Align text to the right */
+        flex-shrink: 0; /* Prevent display from shrinking */
+        margin-left: auto; /* Push display to the right if it's the first timer element */
+        display: none; /* Initially hidden */
+    }
+     .timer-display.active { /* Show when timer is active */
+        display: inline-block;
+     }
+     .timer-display.finished {
+         color: #28a745; /* Green when finished */
+         font-weight: normal; /* Normal weight for 'Done!' */
+         font-style: italic;
+         min-width: auto; /* Allow 'Done!' to be smaller */
+     }
+
+    /* Container for timer display and button to control their layout together */
+    .timer-container {
+        display: flex;
+        align-items: center;
+        gap: 8px; /* Space between display and button */
+        margin-left: auto; /* Push the entire container to the right */
+        flex-shrink: 0; /* Prevent container from shrinking */
+        min-width: 80px; /* Ensure container has space */
+         justify-content: flex-end; /* Align contents to the right */
+    }
 
 
   .weekday-row {
@@ -285,17 +357,27 @@
     display: flex;
     align-items: center;
   }
+  /* Edit Button Styling (Modified for icon) */
   .edit-button {
-    color: #777;
-    font-size: 0.85rem;
-    font-weight: 400;
+    color: #777; /* Icon color */
+    font-size: 0; /* Hide potential text fallback */
     background-color: transparent;
     border: none;
     cursor: pointer;
-    padding: 4px 8px;
+    padding: 4px; /* Adjust padding for icon */
     border-radius: 4px;
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: color 0.2s ease, background-color 0.2s ease;
+    display: flex; /* For centering SVG */
+    align-items: center;
+    justify-content: center;
+    min-width: 28px; /* Ensure button is clickable */
+    min-height: 28px; /* Ensure button is clickable */
   }
+   .edit-button svg {
+       fill: currentColor; /* Use button color for SVG */
+       width: 18px;
+       height: 18px;
+   }
   .edit-button:hover {
     background-color: #e6f2ff;
     color: #007bff;
@@ -481,10 +563,6 @@
        flex-shrink: 0; /* Prevent 'or' from shrinking */
        padding-top: 18px; /* Add padding to align 'or' with the bottom of labels */
    }
-  .reps-duration-input-group .modal-input,
-  .reps-duration-input-group .modal-number {
-    margin-bottom: 0; /* Remove bottom margin when in group */
-  }
   .reps-duration-input-group .input-container {
       flex-grow: 1; /* Allow inputs to grow */
   }
@@ -495,6 +573,38 @@
       color: #444;
       font-weight: 500;
   }
+
+    /* Confetti Styles */
+    .confetti {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none; /* Allow clicking through confetti */
+        overflow: hidden; /* Hide particles outside viewport */
+        z-index: 2000; /* Ensure confetti is on top */
+    }
+
+    .confetti-particle {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        /* Colors set dynamically */
+        animation: fall 2s ease-out forwards; /* Duration and timing function */
+         opacity: 1; /* Start visible */
+    }
+
+    @keyframes fall {
+        0% {
+            transform: translate(0, 0) rotate(0deg);
+            opacity: 1;
+        }
+        100% {
+            transform: translate(var(--fall-x, 0), var(--fall-y, 100vh)) rotate(var(--rotate, 720deg));
+            opacity: 0;
+        }
+    }
 
 
 </style>
@@ -552,7 +662,7 @@
         </div>
         <span>or</span>
         <div class="input-container">
-             <label for="ex-duration-text">Duration</label> <input class="modal-input" type="text" id="ex-duration-text" placeholder="e.g., 30s" /> </div>
+             <label for="ex-duration-text">Duration</label> <input class="modal-input" type="text" id="ex-duration-text" placeholder="e.g., 30s, 1m 30s, Max hold" /> </div>
     </div>
 
 
@@ -584,13 +694,17 @@
       </div>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.js"></script>
 <script>
     const WEEKDAYS=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
     const ORIGINAL_PRESET_CATEGORIES=["Daily GTG","Upper Body","Lower Body","Mobility","Core","Conditioning","Skills"]; // Keep original presets separate
-    let exercises=[], collapsedCategories={}, editIndex=null;
+    let exercises=[], collapsedCategories={};
     let isWeekly=true;
-    let confettiTriggeredFor100Percent = false; // Flag for confetti
+    let editIndex=null;
+    let previousProgressPercentage = 0; // To track progress for confetti
+
+    // Timer variables
+    // { intervalId: number, exerciseIndex: number, exerciseElement: HTMLElement, initialSeconds: number, remainingSeconds: number, displayElement: HTMLElement, timerButton: HTMLElement }
+    let activeTimer = null;
 
     // --- DRAG & DROP & CATEGORY MANAGEMENT START ---
     let categoryOrder = []; // This will hold the current order of ALL categories
@@ -688,6 +802,9 @@
 
     function importExercises(){
         toggleMenu();
+        // Stop any active timer before potentially changing exercises data
+        stopTimer();
+
         const inp=document.createElement('input');
         inp.type='file';
         inp.accept='application/json';
@@ -836,16 +953,13 @@
 
     function clearExercises(){
         toggleMenu();
-        // console.log("Clear exercises initiated for profile:", currentProfile); // Removed debug log
-        if (exercises.length === 0) {
-            alert("No exercises to clear.");
-            return;
-        }
+         // Stop any active timer before potentially changing exercises data
+        stopTimer();
+
+        if (exercises.length === 0) { alert("No exercises to clear."); return; }
         if(confirm(`Are you sure you want to clear all exercises for the current profile "${currentProfile}"? This cannot be undone.`)){
-            exercises=[]; // Clears the in-memory exercises array
-            // console.log("Exercises array after clearing:", exercises); // Removed debug log
-            saveExercises(); // Saves the empty exercises array
-            renderExercises(); // Re-renders the display
+            exercises.forEach(e=>e.progress={});
+            saveExercises(); renderExercises();
         }
     }
     function openCatModal(){
@@ -862,7 +976,7 @@
     }
     function showAbout(){
         toggleMenu();
-        alert('Training Arc - GtG Loop Tracker\n\nBeta Version 1.2 (UI & Confetti)\nA loop tracker for daily habits.\nProfiles and Progress are saved locally.\n\nby Sascha Leng');
+        alert('Training Arc - GtG Loop Tracker\n\nBeta Version 1.4 (Improved Timer)\nA loop tracker for daily habits.\nProgress and profiles are saved locally.\n\nby Sascha Leng');
     }
 
     // --- DRAG & DROP & CATEGORY MANAGEMENT START ---
@@ -1002,7 +1116,15 @@
                      alert("Original preset categories cannot be removed.");
                      return;
                  }
-                if (confirm(`Remove category "${originalCategoryName}"? Exercises using this category will need their category reassigned manually later if desired.`)) {
+                 // Check if any exercises are using this category before allowing deletion
+                const exercisesUsingCategory = exercises.filter(ex => ex.category === originalCategoryName);
+                if (exercisesUsingCategory.length > 0) {
+                     const exerciseNames = exercisesUsingCategory.map(ex => ex.name).join(', ');
+                     alert(`Cannot remove category "${originalCategoryName}" because it is used by the following exercises: ${exerciseNames}. Please change their categories first.`);
+                     return;
+                }
+
+                if (confirm(`Remove category "${originalCategoryName}"?`)) {
                     // Find the index by name in the current order array
                     const indexToDelete = categoryOrder.indexOf(originalCategoryName);
                     if(indexToDelete !== -1) {
@@ -1028,9 +1150,9 @@
             alert("Please enter a category name."); return;
         }
         const lowerNewCatName = newCatName.toLowerCase();
-        // Check for duplicates in the entire categoryOrder list
+        // Check for duplicates in the entire categoryOrder list (case-insensitive check)
         if (categoryOrder.map(c=>c.toLowerCase()).includes(lowerNewCatName)) {
-            alert(`Category "${newCatName}" already exists.`);
+            alert(`Category "${newCatName}" already exists (case-insensitive).`);
         } else {
             categoryOrder.push(newCatName); // Add to the end
             saveCategoryOrderToStorage();
@@ -1047,6 +1169,12 @@
     catListElement.addEventListener('dragstart', (e) => {
         const targetItem = e.target.closest('.modal-item');
         if (!targetItem || !targetItem.draggable) return; // Only drag draggable items
+        // Prevent dragging if the item is currently being renamed
+         if (targetItem.querySelector('.list-rename-input').style.display !== 'none') {
+             e.preventDefault();
+             return;
+         }
+
 
         const categoryName = targetItem.getAttribute('data-name');
         dragStartIndex = categoryOrder.indexOf(categoryName); // Get index from the actual order array
@@ -1057,7 +1185,10 @@
 
         e.dataTransfer.effectAllowed = 'move';
         e.dataTransfer.setData('text/plain', categoryName); // Pass the category name or index
-        targetItem.classList.add('dragging');
+        // Use a small timeout to allow the browser to capture the drag image before modifying classes
+        setTimeout(() => {
+             targetItem.classList.add('dragging');
+        }, 0);
     });
 
     catListElement.addEventListener('dragover', (e) => {
@@ -1138,6 +1269,12 @@
         // Ensure dropIndex is not out of bounds after incrementing
          dropIndex = Math.min(dropIndex, categoryOrder.length);
 
+         // Prevent dropping onto the item being dragged, or before itself (which is the same position)
+         if (dropIndex === dragIndex || dropIndex === dragIndex + 1) {
+             populateCatModal(); // Re-render to clear drag classes
+             return;
+         }
+
 
         // Perform the move in the categoryOrder array
         // 1. Remove the dragged item from its original position
@@ -1193,18 +1330,24 @@
         if (categoriesToDisplay.map(c => c.toLowerCase()).includes(currentCatValue.toLowerCase())) {
             const actualCat = categoriesToDisplay.find(c => c.toLowerCase() === currentCatValue.toLowerCase());
             catSel.value = actualCat;
-        } else {
-            catSel.selectedIndex = 0; // Default to first
+        } else if (categoriesToDisplay.length > 0) {
+            catSel.selectedIndex = 0; // Default to first if not found and options exist
         }
     }
 
     document.getElementById('delete-btn').onclick=()=>{
+        // Stop any active timer before deleting an exercise
+        stopTimer();
+
         if(editIndex!==null && confirm('Are you sure you want to delete this exercise?')){
             exercises.splice(editIndex,1); saveExercises(); closeModal(); renderExercises();
         }
     };
 
     function openModal(idx=null){
+        // Stop any active timer before opening modal to edit exercises
+        stopTimer();
+
         editIndex=idx;
         document.getElementById('modal-overlay').classList.add('active');
         document.getElementById('modal').classList.add('active');
@@ -1319,6 +1462,8 @@
         document.getElementById('modal-overlay').classList.remove('active');
         document.getElementById('modal').classList.remove('active');
         editIndex = null;
+        // Re-render exercises to ensure timer state is correct (buttons disabled/enabled)
+        renderExercises();
     }
     document.getElementById('add-exercise-btn').onclick=()=>openModal(null);
     document.getElementById('modal-overlay').onclick=closeModal;
@@ -1345,19 +1490,30 @@
         let duration = null;
 
         // Determine whether to save reps or duration
-        if (!isNaN(repsNumValue) && repsNumValue >= 0) { // Allow saving 0 reps
-            reps = repsNumValue;
-            duration = null; // Ensure duration is null if reps is set
-        } else if (durationTextValue !== '') {
-            duration = durationTextValue;
-            reps = null; // Ensure reps is null if duration is set
+        const hasRepsInput = !isNaN(repsNumValue) && repsNumValue > 0; // Only consider reps > 0
+        const parsedDurationSeconds = parseDurationString(durationTextValue); // Get parsed value
+        const hasParsableDuration = parsedDurationSeconds !== null && parsedDurationSeconds > 0; // Check if parsable and positive
+        const hasAnyDurationText = durationTextValue !== ''; // Check if any text was entered
+
+        // Validation: Prevent saving both if both reps > 0 AND parsable duration > 0 exist
+        if (hasRepsInput && hasParsableDuration) {
+             alert("Please enter either a valid Reps number OR a valid Duration (like 30s or 1m), not both. Text duration like 'Max hold' is fine with Reps.");
+             return; // Prevent saving both
         }
 
-        // Optional: Alert if neither weight, reps nor duration is entered?
-        // if (weight === null && reps === null && duration === null) {
-        //     alert("Please enter weight, reps, or duration.");
-        //     return;
-        // }
+        // Save Logic:
+        if (hasRepsInput) {
+            reps = repsNumValue;
+            duration = null; // Clear duration if reps are saved
+        } else if (hasAnyDurationText) {
+             // If there is duration text, save it regardless of whether it's parsable
+             duration = durationTextValue;
+             reps = null; // Clear reps if duration text is saved
+        } else {
+             // Neither reps input > 0 nor any duration text was entered
+             reps = null;
+             duration = null;
+        }
 
 
         const sched={};
@@ -1379,6 +1535,9 @@
         saveExercises(); closeModal(); renderExercises();
     };
     document.getElementById('reset-btn').onclick=()=>{
+        // Stop any active timer before resetting progress
+        stopTimer();
+
         if (exercises.length === 0) { alert("No exercises to reset."); return; }
         if(confirm('Are you sure you want to reset all progress for the current profile?')){
             exercises.forEach(e=>e.progress={});
@@ -1387,24 +1546,82 @@
     };
 
     function renderExercises(){
-        // console.log("Rendering exercises. Current exercises array:", exercises); // Removed debug log
         document.getElementById('view-headline').textContent = isWeekly ? 'Weekly Planner' : 'Exercise Overview';
         const c=document.getElementById('tracker-content');
         c.innerHTML='';
-        if (exercises.length === 0) {
-            c.innerHTML = `<p style="text-align:center; color:#777; margin-top:30px;">No exercises for "${currentProfile}". Click "Add New Exercise".</p>`;
-            updateProgress(); return;
-        }
-        // Ensure collapsedCategories is loaded/initialized before rendering
+         // Ensure collapsedCategories is loaded/initialized before rendering
         if (typeof collapsedCategories !== 'object' || collapsedCategories === null) {
              // This case should ideally not happen if load logic is correct, but as fallback
              console.warn("collapsedCategories was not loaded correctly, initializing empty.");
              collapsedCategories = {}; // Default to empty object if not loaded
         }
 
+        if (exercises.length === 0) {
+            c.innerHTML = `<p style="text-align:center; color:#777; margin-top:30px;">No exercises for "${currentProfile}". Click "Add New Exercise".</p>`;
+            updateProgress();
+            stopTimer(); // Ensure timer is stopped if rendering an empty list
+            return;
+        }
+
+
         if(isWeekly) renderWeekly(c);
         else renderByCategory(c);
         updateProgress();
+
+        // After rendering, check if a timer was active for an exercise that still exists
+        // and ensure its state is correctly reflected (Stop button shown, disabled others)
+         if (activeTimer) {
+             const exerciseRow = document.querySelector(`.exercise-row[data-exercise-index="${activeTimer.exerciseIndex}"]`);
+             if (exerciseRow) {
+                 const currentButton = exerciseRow.querySelector('.timer-control');
+                 const currentDisplay = exerciseRow.querySelector('.timer-display');
+
+                 if (currentButton && currentDisplay) {
+                     // Timer was active for this exercise, ensure the Stop button is correctly rendered
+                     if (!currentButton.classList.contains('stop')) {
+                         // The button was likely re-rendered as a Start button, replace it
+                          const stopButton = document.createElement('button');
+                          stopButton.className = 'timer-control stop';
+                          stopButton.textContent = 'Stop'; // Stop button uses text
+
+                          // Re-add stop listener to the *new* stop button element
+                          stopButton.onclick = (e) => { e.stopPropagation(); stopTimer(); };
+
+                          currentButton.parentNode.replaceChild(stopButton, currentButton);
+                          activeTimer.timerButton = stopButton; // Update the reference in activeTimer
+                     }
+
+                     // Ensure the display is active and showing correct time/state
+                     currentDisplay.classList.add('active');
+                     currentDisplay.classList.remove('finished'); // Ensure finished class is removed if it was there
+                     // Update display text based on current state (remaining time or "Done!")
+                     if (activeTimer.remainingSeconds > 0) {
+                         currentDisplay.textContent = formatTime(activeTimer.remainingSeconds);
+                     } else {
+                         // If remaining was 0 or less when rendered, assume it finished just before re-render
+                         currentDisplay.textContent = 'Done!';
+                         currentDisplay.classList.add('finished');
+                     }
+
+
+                     // Disable all other start buttons
+                     document.querySelectorAll('.timer-control.start-grey').forEach(btn => {
+                         if (btn !== activeTimer.timerButton) { // Check against the active (now Stop) button
+                              btn.disabled = true;
+                         }
+                     });
+
+                 } else {
+                     // Exercise row or timer elements not found (e.g., exercise deleted) - stop the timer
+                     console.warn(`Timer active for index ${activeTimer.exerciseIndex}, but exercise row/elements not found. Stopping timer.`);
+                     stopTimer();
+                 }
+             } else {
+                 // Exercise row not found (e.g., exercise deleted) - stop the timer
+                 console.warn(`Timer active for index ${activeTimer.exerciseIndex}, but exercise row not found. Stopping timer.`);
+                 stopTimer();
+             }
+         }
     }
 
     function renderByCategory(cont){
@@ -1528,7 +1745,7 @@
                 collapsedCategories[day]=!collapsedCategories[day];
                 // Save to profile-specific key
                 localStorage.setItem('collapsedCategories_' + currentProfile, JSON.stringify(collapsedCategories));
-                renderExercises(); // Rerender to show/hide content
+                renderExercises(); // Re-render to show/hide content
             };
             // --- MODIFIED: Use textContent for day name, create span separately ---
             const h2 = document.createElement('h2');
@@ -1545,14 +1762,18 @@
             if(!collapsedCategories[day]){
                 const d=document.createElement('div');
                 d.className='section-content';
-                dayItems.forEach(({e,idx,count,dayKey})=>d.appendChild(renderExerciseRow(e,idx,count,day)));
+                dayItems.forEach(({e,idx,count})=>d.appendChild(renderExerciseRow(e,idx,count,day)));
                 cont.appendChild(d);
             }
         });
     }
 
-    function renderExerciseRow(exercise, index, repsCountForDay, dayKey){
-        const row=document.createElement('div'); row.className='exercise-row';
+    function renderExerciseRow(exercise, index, setsCountForDay, dayKey){
+        const row=document.createElement('div');
+        row.className='exercise-row';
+        // Add a data attribute to identify the exercise by its index for timer purposes
+        row.setAttribute('data-exercise-index', index);
+
         const headerRow=document.createElement('div'); headerRow.className='header-row'; // flex container
 
         const nameDiv=document.createElement('div'); nameDiv.className='name'; nameDiv.textContent=exercise.name;
@@ -1560,7 +1781,11 @@
         // Controls (edit button) - remains a separate flex item, auto margin pushes it right
         const controlsDiv = document.createElement('div');
         const editBtn=document.createElement('button');
-        editBtn.className='edit-button'; editBtn.textContent='edit';
+        editBtn.className='edit-button';
+        // Use PEN icon SVG instead of text
+        editBtn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83l3.75 3.75l1.83-1.83z"/></svg>';
+        editBtn.title = "Edit Exercise";
+
         editBtn.onclick=(e)=>{ e.stopPropagation(); openModal(index); };
         controlsDiv.appendChild(editBtn);
 
@@ -1568,12 +1793,14 @@
         headerRow.appendChild(nameDiv);
         headerRow.appendChild(controlsDiv); // Place controls last in the flex container
 
-
         row.appendChild(headerRow); // Add header row to main row
 
 
         // Display Weight, Reps, or Duration based on properties, in one line
         const detailsParts = [];
+        // Calculate duration in seconds from the exercise object's duration string
+        const durationInSeconds = parseDurationString(exercise.duration || "");
+
 
         // Add Weight if available and > 0
         if (exercise.weight !== undefined && exercise.weight !== null && typeof exercise.weight === 'number' && exercise.weight > 0) {
@@ -1586,25 +1813,76 @@
             detailsParts.push(`${exercise.reps} reps`);
         }
 
-        // Add Duration if available and non-empty
-        if (exercise.duration !== undefined && exercise.duration !== null && typeof exercise.duration === 'string' && exercise.duration.trim() !== '') {
-            detailsParts.push(exercise.duration.trim()); // Trim whitespace
+        // Add Duration text if available (even non-parsable text)
+        if (exercise.duration !== undefined && exercise.duration !== null && exercise.duration.trim() !== "") {
+             detailsParts.push(exercise.duration.trim()); // Add the original duration text
         }
 
-        // Only create and append the details div if there's something to display
+
+        // Container for the details text and the timer elements
+        const detailsTimerContainer = document.createElement('div');
+        detailsTimerContainer.className = 'reps-duration'; // Reuse the reps-duration class styling
+
+
+         // Add the formatted details text if available
         if (detailsParts.length > 0) {
-            const detailsDiv = document.createElement('div');
-            detailsDiv.className = 'reps-duration'; // Reuse the reps-duration class styling
-            detailsDiv.textContent = detailsParts.join(' / '); // Join parts with " / "
-            row.appendChild(detailsDiv);
+            const detailsTextSpan = document.createElement('span');
+            detailsTextSpan.textContent = detailsParts.join(' / ');
+             detailsTimerContainer.appendChild(detailsTextSpan);
+        }
+
+        // Timer Elements Container
+        const timerElementsContainer = document.createElement('div');
+        timerElementsContainer.className = 'timer-container'; // Use new container for right alignment
+
+
+         // Add timer elements ONLY if duration is valid and positive (parsed duration)
+         if (durationInSeconds !== null && durationInSeconds > 0) {
+             const timerDisplay = document.createElement('span');
+             timerDisplay.className = 'timer-display';
+             // Initial display text is the full duration
+             timerDisplay.textContent = formatTime(durationInSeconds);
+
+
+             const timerButton = document.createElement('button');
+             timerButton.className = 'timer-control start-grey'; // Add grey class for Start
+             timerButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-.5 15.5V12h-3v-1h4v6.5h-1z"/></svg>'; // Timer icon SVG
+             timerButton.title = "Start Timer"; // Tooltip
+
+
+             // Disable the button if another timer is already active
+             if (activeTimer) {
+                 timerButton.disabled = true;
+             }
+
+             // Add event listener to start the timer
+             timerButton.onclick = (e) => {
+                 e.stopPropagation(); // Prevent triggering exercise edit or section collapse
+                 if (!activeTimer && durationInSeconds > 0) { // Double-check duration validity before starting
+                     // Pass the found DOM elements to startTimer
+                     startTimer(index, durationInSeconds, row, timerDisplay, timerButton);
+                 }
+             };
+
+             timerElementsContainer.appendChild(timerDisplay);
+             timerElementsContainer.appendChild(timerButton);
+
+             // Add the timer elements container to the main details/timer line
+             detailsTimerContainer.appendChild(timerElementsContainer);
+         }
+
+
+        // Only append the detailsTimerContainer if it has any children (details or timer elements)
+        if (detailsTimerContainer.hasChildNodes()) {
+             row.appendChild(detailsTimerContainer);
         }
 
 
         const checkboxGroupOuter = document.createElement('div');
 
-        if(isWeekly && dayKey != null && repsCountForDay != null){
+        if(isWeekly && dayKey != null && setsCountForDay != null){
             const checkboxGroup=document.createElement('div'); checkboxGroup.className='checkbox-group';
-            for(let k=0;k<repsCountForDay;k++){
+            for(let k=0;k<setsCountForDay;k++){
                 const cb=document.createElement('input'); cb.type='checkbox';
                 const progressKey=`${dayKey}-${index}-${k}`;
                 cb.checked=!!(exercise.progress&&exercise.progress[progressKey]);
@@ -1654,6 +1932,245 @@
         return row;
     }
 
+     // Helper function to parse duration string (returns seconds or null if not parsable)
+     function parseDurationString(durationString) {
+        if (!durationString || typeof durationString !== 'string') return null;
+
+        let totalSeconds = 0;
+        const lowerDuration = durationString.toLowerCase().trim();
+
+        // Handle H:M:SS or M:SS format
+        const parts = lowerDuration.split(':').map(p => parseInt(p));
+        if (parts.length > 1 && parts.every(p => !isNaN(p) && p >= 0)) {
+             if (parts.length === 2) { // M:SS
+                totalSeconds = parts[0] * 60 + parts[1];
+            } else if (parts.length === 3) { // H:M:SS
+                totalSeconds = parts[0] * 3600 + parts[1] * 60 + parts[2];
+            }
+            return totalSeconds > 0 ? totalSeconds : null; // Return null for 0 duration from M:SS/H:M:SS
+        }
+
+        // Handle units like '30s', '1m 30s', '2min', '1hr'
+        // Use a separate regex execution variable to avoid state issues with global regex flag 'g'
+        const tempRegex = /(\d+)\s*(h(?:r)?|m(?:in)?|s(?:ec)?)/g;
+        let match;
+        let unitFound = false;
+
+        while ((match = tempRegex.exec(lowerDuration)) !== null) {
+            const value = parseInt(match[1]);
+            const unit = match[2];
+            if (!isNaN(value) && value >= 0) {
+                unitFound = true;
+                if (unit.startsWith('h')) {
+                    totalSeconds += value * 3600;
+                } else if (unit.startsWith('m')) {
+                    totalSeconds += value * 60;
+                } else if (unit.startsWith('s')) {
+                    totalSeconds += value;
+                }
+            }
+        }
+
+         // If units were found, use the calculated totalSeconds
+         if (unitFound) {
+             return totalSeconds > 0 ? totalSeconds : null; // Return null for 0 duration if units were used
+         }
+
+        // If no units or H:M:SS format matched, check if it's just a simple number (interpreted as seconds)
+        const simpleNumber = parseInt(lowerDuration);
+         // Check if the parsed number *exactly* matches the trimmed input string to avoid parsing "30s" as 30
+         if (!isNaN(simpleNumber) && simpleNumber >= 0 && String(simpleNumber) === lowerDuration) {
+             return simpleNumber > 0 ? simpleNumber : null; // Return null for 0 duration if simple number is 0
+        }
+
+
+        return null; // Return null if parsing fails for everything
+     }
+
+
+    // Helper function to format seconds into MM:SS or H:MM:SS
+    function formatTime(seconds) {
+        if (seconds < 0) seconds = 0; // Don't show negative time
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const remainingSeconds = seconds % 60;
+
+        const paddedMinutes = minutes.toString().padStart(2, '0');
+        const paddedSeconds = remainingSeconds.toString().padStart(2, '0');
+
+        if (hours > 0) {
+            return `${hours}:${paddedMinutes}:${paddedSeconds}`;
+        } else {
+            return `${minutes}:${paddedSeconds}`;
+        }
+    }
+
+    // Start the timer
+    function startTimer(exerciseIndex, durationInSeconds, exerciseElement, displayElement, startButton) {
+        // Stop any existing timer first
+        stopTimer();
+
+        // Ensure elements are valid before proceeding
+        if (!exerciseElement || !displayElement || !startButton) {
+            console.error("startTimer called with invalid elements.");
+            return;
+        }
+
+        const stopButton = document.createElement('button');
+        stopButton.className = 'timer-control stop'; // Add magenta class
+        stopButton.textContent = 'Stop'; // Stop button uses text
+
+        // Replace the start button with the stop button
+        startButton.parentNode.replaceChild(stopButton, startButton);
+
+         // Disable all other start buttons
+         document.querySelectorAll('.timer-control.start-grey').forEach(btn => {
+             btn.disabled = true;
+         });
+
+
+        let remainingSeconds = durationInSeconds;
+        displayElement.textContent = formatTime(remainingSeconds);
+        displayElement.classList.add('active'); // Show the display element
+        displayElement.classList.remove('finished'); // Ensure finished class is removed
+
+        const intervalId = setInterval(() => {
+            remainingSeconds--;
+            activeTimer.remainingSeconds = remainingSeconds; // Update remaining seconds in the active timer object
+            displayElement.textContent = formatTime(remainingSeconds);
+
+            if (remainingSeconds <= 0) {
+                stopTimer(true); // Use stopTimer with 'finished' flag
+
+                 // Optionally play a sound or vibrate
+                 try {
+                     // Check if Notification permission is granted, ask if not, and show a notification
+                     if (Notification.permission === 'granted') {
+                         new Notification(`Timer Finished: ${exercises[exerciseIndex].name}`);
+                     } else if (Notification.permission !== 'denied') {
+                         Notification.requestPermission().then(permission => {
+                             if (permission === 'granted') {
+                                 new Notification(`Timer Finished: ${exercises[exerciseIndex].name}`);
+                             }
+                         });
+                     }
+                 } catch (e) {
+                      console.error("Notification failed:", e);
+                 }
+                 try { navigator.vibrate(2000); } catch(e) { console.error("Vibration failed:", e); } // Vibrate for 2 seconds
+
+            }
+        }, 1000);
+
+        // Store timer state
+        activeTimer = {
+            intervalId: intervalId,
+            exerciseIndex: exerciseIndex, // Store exercise index
+            exerciseElement: exerciseElement, // Store reference to the exercise row element
+            initialSeconds: durationInSeconds, // Store initial duration
+            remainingSeconds: remainingSeconds, // Store current remaining time
+            displayElement: displayElement, // Store reference to the timer display element
+            timerButton: stopButton // Store the current button reference (which is now the stop button)
+        };
+
+        // Add event listener to the stop button
+        stopButton.onclick = (e) => {
+            e.stopPropagation();
+            stopTimer(); // Stop manually
+        };
+         console.log(`Timer started for exercise index ${exerciseIndex}`);
+    }
+
+    // Stop the currently active timer
+    // Optional parameter `finished` to indicate if timer finished naturally
+    function stopTimer(finished = false) {
+        if (activeTimer) {
+             console.log(`Stopping timer for index ${activeTimer.exerciseIndex}. Finished: ${finished}`);
+            clearInterval(activeTimer.intervalId);
+
+             // Find the exercise row again in case the DOM was re-rendered
+            const exerciseRow = document.querySelector(`.exercise-row[data-exercise-index="${activeTimer.exerciseIndex}"]`);
+            // Find the current display and button elements within the current DOM structure
+             const currentDisplay = exerciseRow ? exerciseRow.querySelector('.timer-display') : activeTimer.displayElement; // Fallback to stored ref if row not found
+             const currentButton = exerciseRow ? exerciseRow.querySelector('.timer-control') : activeTimer.timerButton; // Fallback to stored ref
+
+             // Ensure the display is updated and classes are reset
+            if (currentDisplay) {
+                 currentDisplay.classList.remove('active'); // Hide the display element
+                 currentDisplay.classList.remove('finished'); // Remove finished class
+
+                 // Reset text content to initial duration format, unless it finished naturally
+                 if (!finished && activeTimer.initialSeconds !== null) {
+                      currentDisplay.textContent = formatTime(activeTimer.initialSeconds); // Reset to original time
+                 } else if (finished) {
+                      currentDisplay.textContent = 'Done!'; // Keep "Done!" if it finished naturally
+                      currentDisplay.classList.add('finished'); // Add finished class back if it finished naturally
+                 } else if (activeTimer.initialSeconds !== null) {
+                     // Fallback if not finished but initialSeconds is known
+                      currentDisplay.textContent = formatTime(activeTimer.initialSeconds);
+                 } else {
+                      currentDisplay.textContent = formatTime(0); // Default to 0:00 if initial is unknown
+                 }
+            } else {
+                 console.warn("Timer display element not found during stopTimer.");
+            }
+
+
+             // Ensure the button is correctly reset (from Stop back to Start) if it's still the Stop button
+            if (currentButton && currentButton.classList.contains('stop')) {
+                 const newStartButton = document.createElement('button');
+                 newStartButton.className = 'timer-control start-grey'; // Set grey class
+                 newStartButton.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-.5 15.5V12h-3v-1h4v6.5h-1z"/></svg>'; // Timer icon SVG
+                 newStartButton.title = "Start Timer"; // Tooltip
+
+                 // Re-attach the click listener to the new start button
+                 // Need to find the exercise object and its duration again as activeTimer is about to be cleared
+                 const exercise = exercises[activeTimer.exerciseIndex];
+                 const durationInSeconds = parseDurationString(exercise.duration || ""); // Ensure duration is retrieved
+
+                 if (exerciseRow && currentDisplay) { // Ensure necessary elements are found
+                       if (durationInSeconds !== null && durationInSeconds > 0) {
+                            // Use a closure to capture index, duration, row, and display for the new button's click handler
+                           newStartButton.onclick = (function(idx, dur, rowEl, dispEl, btnEl) {
+                                return function(e) {
+                                   e.stopPropagation();
+                                    // Before starting, check if another timer became active since this button was created
+                                   if (!activeTimer) {
+                                       startTimer(idx, dur, rowEl, dispEl, btnEl);
+                                   } else {
+                                       console.log("Tried to start timer, but another is active.");
+                                   }
+                               };
+                            })(activeTimer.exerciseIndex, durationInSeconds, exerciseRow, currentDisplay, newStartButton); // Pass elements and values
+                           newStartButton.disabled = false; // Ensure it's enabled if duration is valid
+                       } else {
+                           // This case shouldn't happen if a timer was started, but defensive
+                           newStartButton.disabled = true; // Disable if duration is now invalid/zero
+                       }
+                       // Replace the button in the DOM
+                       currentButton.parentNode.replaceChild(newStartButton, currentButton);
+                 } else {
+                     console.warn("Could not find exercise row or display element to replace timer button.");
+                 }
+            } else if (currentButton && currentButton.classList.contains('start-grey')) {
+                 // If for some reason the button was already a start button, just ensure it's enabled
+                 currentButton.disabled = false;
+            } else {
+                 console.warn("Could not find timer button during stopTimer.");
+            }
+
+             // Re-enable all start buttons regardless
+             document.querySelectorAll('.timer-control.start-grey').forEach(btn => {
+                 btn.disabled = false;
+             });
+
+
+            activeTimer = null; // Clear the active timer state
+             console.log("activeTimer set to null.");
+        }
+    }
+
+
     function updateProgress(){
         let totalSets=0, completedSets=0;
         exercises.forEach((ex, exerciseIdx) => {
@@ -1677,27 +2194,71 @@
         document.getElementById('progress-fill').style.width = percentage + '%';
         document.getElementById('progress-label').textContent = percentage + '%';
 
-        // Confetti logic
-        if (percentage === 100 && !confettiTriggeredFor100Percent) {
-             // Check if the confetti object exists before calling
-             if (typeof confetti === 'function') {
-                confetti({
-                    particleCount: 100, // Number of particles
-                    spread: 70, // How wide the particles spread
-                    origin: { y: 0.6 }, // Origin near the middle-top
-                    colors: ['#00FFFF', '#FF00FF', '#FFFF00'] // Cyan, Magenta, Yellow
-                });
-             } else {
-                 console.warn("Confetti function not available. Ensure the confetti script is loaded.");
-             }
-            confettiTriggeredFor100Percent = true;
-        } else if (percentage < 100) {
-            // Reset flag if progress drops below 100%
-            confettiTriggeredFor100Percent = false;
-        }
+         // Confetti Trigger
+         if (percentage === 100 && previousProgressPercentage < 100) {
+             triggerConfetti();
+         }
+         previousProgressPercentage = percentage; // Store current percentage for next update
     }
 
+    // Function to trigger confetti animation
+    function triggerConfetti() {
+         const confettiContainer = document.createElement('div');
+         confettiContainer.className = 'confetti';
+         document.body.appendChild(confettiContainer);
+
+         const colors = ['cyan', 'magenta', 'yellow'];
+         const numberOfParticles = 100; // Adjust as needed
+
+         for (let i = 0; i < numberOfParticles; i++) {
+             const particle = document.createElement('div');
+             particle.className = 'confetti-particle';
+
+             const color = colors[Math.floor(Math.random() * colors.length)];
+             particle.style.backgroundColor = color;
+
+             // Randomize start position (top of screen, spread horizontally)
+             const startX = Math.random() * window.innerWidth;
+             const startY = -20; // Start slightly above the viewport
+
+             // Randomize end position and rotation
+             const endX = startX + (Math.random() - 0.5) * 400; // Horizontal spread
+             const endY = window.innerHeight + 20; // Fall below viewport
+
+             const rotateDeg = Math.random() * 1000 - 500; // Random rotation
+
+             particle.style.left = `${startX}px`;
+             particle.style.top = `${startY}px`;
+
+             // Set CSS variables for animation
+             particle.style.setProperty('--fall-x', `${endX - startX}px`);
+             particle.style.setProperty('--fall-y', `${endY - startY}px`);
+             particle.style.setProperty('--rotate', `${rotateDeg}deg`);
+
+
+             // Set animation duration and delay
+             const animationDuration = 1.5 + Math.random() * 1; // 1.5s to 2.5s
+             const animationDelay = Math.random() * 1; // Up to 1s delay
+             particle.style.animationDuration = `${animationDuration}s`;
+             particle.style.animationDelay = `${animationDelay}s`;
+
+
+             confettiContainer.appendChild(particle);
+
+             // Remove particle after animation
+             particle.addEventListener('animationend', () => {
+                 particle.remove();
+                 // Remove container if it's empty
+                 if (confettiContainer.children.length === 0) {
+                     confettiContainer.remove();
+                 }
+             });
+         }
+    }
+
+
     function ensureScheduleFormat(ex) {
+        // Ensure schedule is an object
         if (!ex.schedule || typeof ex.schedule !== 'object') {
             ex.schedule = {};
         }
@@ -1710,9 +2271,10 @@
             }
         }
         ex.schedule = newSchedule;
+
+        // Ensure progress is an object
         if (!ex.progress || typeof ex.progress !== 'object') ex.progress = {};
 
-         // --- Weight Migration/Adaptation START ---
          // Ensure weight is a number or null
          if (ex.weight !== undefined && ex.weight !== null) {
              const val = parseFloat(ex.weight);
@@ -1720,20 +2282,24 @@
          } else {
               ex.weight = null; // Ensure property exists
          }
-         // --- Weight Migration/Adaptation END ---
 
+        // Ensure reps is a number or null, and duration is string or null
+        // Handle potential migration from older formats where reps might have been a string like "30s"
+        let tempReps = ex.reps;
+        let tempDuration = ex.duration;
 
-        // --- Reps/Duration Migration/Adaptation START ---
-        // If old 'reps' string exists and new 'reps'/'duration' don't, try to parse
-        if (ex.reps !== undefined && typeof ex.reps === 'string' && ex.duration === undefined) {
-             const oldRepsStr = ex.reps.trim();
+        // Check if 'reps' was a string in older data and duration doesn't exist
+        if (typeof tempReps === 'string' && (tempDuration === undefined || tempDuration === null)) {
+             const oldRepsStr = tempRps.trim();
+             // Attempt to parse old string reps as a number first
              const numValue = parseInt(oldRepsStr);
-             // Simple check: if parsing as int results in the original string (no extra text), treat as number reps
+
              if (!isNaN(numValue) && numValue >= 0 && String(numValue) === oldRepsStr) {
+                 // It was a number string, treat as reps
                  ex.reps = numValue;
                  ex.duration = null;
              } else if (oldRepsStr !== '') {
-                  // Otherwise, treat as duration text
+                 // It was a non-numeric string, treat as duration text
                  ex.duration = oldRepsStr;
                  ex.reps = null;
              } else {
@@ -1741,33 +2307,15 @@
                  ex.reps = null;
                  ex.duration = null;
              }
-         } else if (ex.reps === undefined && ex.duration === undefined) {
-             // If neither property exists (very old data?), default to nulls
-             ex.reps = null;
-             ex.duration = null;
-         }
-         // Ensure reps is number or null, and duration is string or null if they exist
-         if (ex.reps !== undefined && ex.reps !== null && typeof ex.reps !== 'number') {
-              const val = parseInt(ex.reps);
-              ex.reps = !isNaN(val) && val >= 0 ? val : null;
-              // If old reps was text and duration didn't exist, ensure that text goes to duration
-              if (ex.reps === null && ex.duration === undefined && typeof Object.getOwnPropertyDescriptor(ex, 'reps').value === 'string') { // Check the original property type before parsing
-                   ex.duration = Object.getOwnPropertyDescriptor(ex, 'reps').value; // Put old reps string in duration if it couldn't be parsed as number and duration didn't exist
-              } else if (ex.duration === undefined) {
-                   ex.duration = null; // Ensure duration is null if not set
-              }
-         } else if (ex.reps === undefined) { // Ensure reps is null if it didn't exist at all
-             ex.reps = null;
-         }
+        } else {
+             // If reps was already a number or null, ensure it remains a number or null
+             const numValue = typeof tempReps === 'number' ? tempReps : parseInt(tempReps); // Parse if not already a number
+              ex.reps = !isNaN(numValue) && numValue >= 0 ? numValue : null;
 
-         if (ex.duration !== undefined && ex.duration !== null && typeof ex.duration !== 'string') {
-             ex.duration = String(ex.duration); // Ensure it's a string
-         } else if (ex.duration === undefined) { // Ensure duration is null if it didn't exist at all
-             ex.duration = null;
-         }
-
-
-        // --- Reps/Duration Migration/Adaptation END ---
+             // Ensure duration is a string or null
+             ex.duration = (tempDuration !== undefined && tempDuration !== null) ? String(tempDuration).trim() : null;
+             if (ex.duration === "") ex.duration = null; // Treat empty string duration as null
+        }
 
 
         // Clean up old/unused properties if they exist
@@ -1782,26 +2330,44 @@
              }
              delete ex.days;
         }
-         // Clean up old string reps property if it's not the one we kept as duration
-         if (typeof Object.getOwnPropertyDescriptor(ex, 'reps') !== 'undefined' && typeof Object.getOwnPropertyDescriptor(ex, 'reps').value === 'string' && ex.duration !== Object.getOwnPropertyDescriptor(ex, 'reps').value) {
-              delete ex.reps;
-         } else if (typeof ex.reps === 'string' && ex.duration !== ex.reps) {
-             // Fallback check if getOwnPropertyDescriptor is tricky
+         // Ensure no leftover string 'reps' property if it wasn't converted
+         if (typeof ex.reps === 'string') {
              delete ex.reps;
+             ex.reps = null;
          }
 
 
         return ex;
     }
 
+
     document.addEventListener('click', function(event) {
         const menu = document.getElementById('dropdown-menu');
         const icon = document.querySelector('.menu-icon');
+        // Check if the clicked element is NOT inside the menu icon and NOT inside the menu itself, and the menu is currently showing
         if (menu && icon && menu.classList.contains('show') &&
             !icon.contains(event.target) && !menu.contains(event.target)) {
             menu.classList.remove('show');
         }
+         // Also close modals if clicking outside them
+         const profileModal = document.getElementById('profile-modal');
+         const profileOverlay = document.getElementById('profile-modal-overlay');
+         if (profileModal && profileModal.classList.contains('active') && event.target === profileOverlay) {
+             closeProfileModal();
+         }
+          const catModal = document.getElementById('cat-modal');
+         const catOverlay = document.getElementById('cat-modal-overlay');
+          if (catModal && catModal.classList.contains('active') && event.target === catOverlay) {
+             closeCatModal();
+         }
+          const mainModal = document.getElementById('modal');
+         const mainOverlay = document.getElementById('modal-overlay');
+          if (mainModal && mainModal.classList.contains('active') && event.target === mainOverlay) {
+             closeModal();
+         }
+
     });
+
 
     let profiles = {};
     let currentProfile = "Default";
@@ -1852,6 +2418,9 @@
     }
 
     function switchProfile() {
+        // Stop any active timer before switching profiles
+        stopTimer();
+
         const selectedProfileName = document.getElementById("profile-select").value;
         if (selectedProfileName && profiles.hasOwnProperty(selectedProfileName)) {
             currentProfile = selectedProfileName;
@@ -1884,7 +2453,7 @@
                 }
              }
 
-            confettiTriggeredFor100Percent = false; // Reset confetti flag on profile switch
+
             renderExercises();
             populateExerciseCategoryDropdown();
         } else if (Object.keys(profiles).length > 0) { // Fallback to first profile (alphabetical)
@@ -1900,10 +2469,8 @@
              if (storedCollapsed === null) {
                  // First time loading this profile - collapse everything
                  collapsedCategories = {};
-                 // Need categories to collapse, so ensure categoryOrder is loaded first
-                 if (categoryOrder.length === 0) loadCategoryOrder(); // Defensive check
-                 allCategories().forEach(cat => collapsedCategories[cat] = true); // Collapse categories
-                 WEEKDAYS.forEach(day => collapsedCategories[day] = true); // Collapse weekdays
+                 allCategories().forEach(cat => collapsedCategories[cat] = true);
+                 WEEKDAYS.forEach(day => collapsedCategories[day] = true);
                  localStorage.setItem(collapsedKey, JSON.stringify(collapsedCategories)); // Save the newly collapsed state
                  console.log(`Fallback profile "${currentProfile}" loaded for the first time, collapsing sections.`);
 
@@ -1914,11 +2481,11 @@
                      console.log(`Fallback profile "${currentProfile}" loaded, restored collapsed state.`);
                 } catch (e) {
                     console.error("Error parsing collapsed state for fallback profile", currentProfile, e);
-                    collapsedCategories = {};
-                 }
+                    collapsedCategories = {}; // Fallback to empty (uncollapsed) on parse error
+                    localStorage.setItem(collapsedKey, JSON.stringify(collapsedCategories)); // Save empty state
+                }
              }
 
-            confettiTriggeredFor100Percent = false; // Reset confetti flag on fallback profile switch
             renderExercises(); populateExerciseCategoryDropdown();
         } else { // Should not be reached if loadProfiles ensures Default exists
             console.error("No profiles available to switch to.");
@@ -1945,14 +2512,13 @@
              }
               // Save duration only if it's a non-null, non-empty string
               if (ex.duration !== undefined && ex.duration !== null && typeof ex.duration === 'string' && ex.duration.trim() !== '') {
-                 savedEx.duration = ex.duration;
+                 savedEx.duration = ex.duration.trim(); // Save trimmed duration
              }
              return savedEx;
         });
         localStorage.setItem("profiles", JSON.stringify(profiles));
          // Save collapsed state specific to the current profile
          localStorage.setItem('collapsedCategories_' + currentProfile, JSON.stringify(collapsedCategories));
-         // console.log("Profiles object saved:", JSON.parse(localStorage.getItem("profiles"))); // Debug log removed
     }
 
 
@@ -2086,6 +2652,9 @@
             deleteBtn.onclick = function() {
                 if (deleteBtn.disabled) { alert("Cannot delete the last profile."); return;}
                 if (confirm(`Delete profile "${originalName}"? This cannot be undone.`)) {
+                     // Stop any active timer if it belongs to this profile before deleting
+                     stopTimer();
+
                     const nameToDelete = originalName;
                     delete profiles[nameToDelete];
 
@@ -2130,6 +2699,34 @@
             };
         });
         document.getElementById('new-profile-name-input').value = '';
+    }
+
+    document.getElementById('add-profile-btn').onclick = function() {
+        const newProfileNameInput = document.getElementById('new-profile-name-input');
+        let newName = newProfileNameInput.value.trim();
+        if (!newName) { alert("Please enter a profile name."); return; }
+        if (Object.keys(profiles).map(p=>p.toLowerCase()).includes(newName.toLowerCase())) {
+            alert(`Profile "${newName}" already exists (case-insensitive).`); return;
+        }
+         // Stop any active timer before creating a new profile
+         stopTimer();
+
+        profiles[newName] = []; currentProfile = newName;
+        localStorage.setItem("currentProfile", currentProfile);
+        localStorage.setItem("profiles", JSON.stringify(profiles));
+        exercises = [];
+
+         // Initialize collapsed state for the new profile as collapsed (all true)
+         collapsedCategories = {};
+         allCategories().forEach(cat => collapsedCategories[cat] = true); // Collapse categories
+         WEEKDAYS.forEach(day => collapsedCategories[day] = true); // Collapse weekdays
+         localStorage.setItem('collapsedCategories_' + currentProfile, JSON.stringify(collapsedCategories));
+         console.log(`New profile "${newName}" added, initialized collapsed state.`);
+
+
+        loadProfileOptions(); populateProfileModal(); renderExercises();
+        newProfileNameInput.value = '';
+        alert(`Profile "${newName}" added and selected.`);
     };
     document.getElementById('profile-modal-overlay').onclick = closeProfileModal;
 
@@ -2167,7 +2764,6 @@
             }
         }
 
-        confettiTriggeredFor100Percent = false; // Initialize flag on page load
         renderExercises(); // Render using the loaded category order and collapsed state
         populateExerciseCategoryDropdown(); // Populate dropdown using the loaded order
 
@@ -2207,6 +2803,8 @@
                   renderExercises(); // Re-render to reflect potentially migrated collapsed state
              }
          }
+         // Initialize previousProgressPercentage on load
+         updateProgress();
     });
 
   </script>
