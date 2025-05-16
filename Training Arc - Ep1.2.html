@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.js"></script>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Training Arc: GtG Loop Tracker</title>
@@ -588,11 +589,11 @@
 
     .confetti-particle {
         position: absolute;
-        width: 8px;
-        height: 8px;
+        /* Size and border-radius are now set dynamically in JS */
         /* Colors set dynamically */
-        animation: fall 2s ease-out forwards; /* Duration and timing function */
-         opacity: 1; /* Start visible */
+        animation: fall ease-out forwards; /* Animation name, duration and delay set in JS */
+        opacity: 1; /* Start visible */
+        will-change: transform, opacity; /* Performance hint */
     }
 
     @keyframes fall {
@@ -601,7 +602,7 @@
             opacity: 1;
         }
         100% {
-            transform: translate(var(--fall-x, 0), var(--fall-y, 100vh)) rotate(var(--rotate, 720deg));
+            transform: translate(var(--fall-x, 0), var(--fall-y, 120vh)) rotate(var(--rotate, 720deg));
             opacity: 0;
         }
     }
@@ -2195,66 +2196,31 @@
         document.getElementById('progress-label').textContent = percentage + '%';
 
          // Confetti Trigger
-         if (percentage === 100 && previousProgressPercentage < 100) {
-             triggerConfetti();
-         }
-         previousProgressPercentage = percentage; // Store current percentage for next update
+             if (percentage === 100 && !confettiTriggeredFor100Percent) {
+                 for (let i = 0; i < 3; i++) {
+                     setTimeout(() => {
+                         confetti({
+                             particleCount: 200,
+                             angle: 90,
+                             spread: 120,
+                             origin: { x: 0.5, y: 0.3 },
+                             colors: ['#00FFFF','#FF00FF','#FFFF00','#0FF','#F0F','#FF0'],
+                             shapes: ['square','circle'],
+                             gravity: 0.6,
+                             ticks: 200,
+                             scalar: 1.2
+                         });
+                     }, i * 300); // 3 shots, 300ms apart
+                 }
+                 confettiTriggeredFor100Percent = true;
+             } else if (percentage < 100) {
+                 confettiTriggeredFor100Percent = false;
+             }
+             previousProgressPercentage = percentage; // Store current percentage for next update
     }
 
     // Function to trigger confetti animation
-    function triggerConfetti() {
-         const confettiContainer = document.createElement('div');
-         confettiContainer.className = 'confetti';
-         document.body.appendChild(confettiContainer);
-
-         const colors = ['cyan', 'magenta', 'yellow'];
-         const numberOfParticles = 100; // Adjust as needed
-
-         for (let i = 0; i < numberOfParticles; i++) {
-             const particle = document.createElement('div');
-             particle.className = 'confetti-particle';
-
-             const color = colors[Math.floor(Math.random() * colors.length)];
-             particle.style.backgroundColor = color;
-
-             // Randomize start position (top of screen, spread horizontally)
-             const startX = Math.random() * window.innerWidth;
-             const startY = -20; // Start slightly above the viewport
-
-             // Randomize end position and rotation
-             const endX = startX + (Math.random() - 0.5) * 400; // Horizontal spread
-             const endY = window.innerHeight + 20; // Fall below viewport
-
-             const rotateDeg = Math.random() * 1000 - 500; // Random rotation
-
-             particle.style.left = `${startX}px`;
-             particle.style.top = `${startY}px`;
-
-             // Set CSS variables for animation
-             particle.style.setProperty('--fall-x', `${endX - startX}px`);
-             particle.style.setProperty('--fall-y', `${endY - startY}px`);
-             particle.style.setProperty('--rotate', `${rotateDeg}deg`);
-
-
-             // Set animation duration and delay
-             const animationDuration = 1.5 + Math.random() * 1; // 1.5s to 2.5s
-             const animationDelay = Math.random() * 1; // Up to 1s delay
-             particle.style.animationDuration = `${animationDuration}s`;
-             particle.style.animationDelay = `${animationDelay}s`;
-
-
-             confettiContainer.appendChild(particle);
-
-             // Remove particle after animation
-             particle.addEventListener('animationend', () => {
-                 particle.remove();
-                 // Remove container if it's empty
-                 if (confettiContainer.children.length === 0) {
-                     confettiContainer.remove();
-                 }
-             });
-         }
-    }
+    
 
 
     function ensureScheduleFormat(ex) {
@@ -2290,7 +2256,7 @@
 
         // Check if 'reps' was a string in older data and duration doesn't exist
         if (typeof tempReps === 'string' && (tempDuration === undefined || tempDuration === null)) {
-             const oldRepsStr = tempRps.trim();
+             const oldRepsStr = tempReps.trim(); // Corrected variable name from tempRps to tempReps
              // Attempt to parse old string reps as a number first
              const numValue = parseInt(oldRepsStr);
 
@@ -2332,7 +2298,7 @@
         }
          // Ensure no leftover string 'reps' property if it wasn't converted
          if (typeof ex.reps === 'string') {
-             delete ex.reps;
+             // delete ex.reps; // This line was commented out in the original, ensure it's handled by logic above
              ex.reps = null;
          }
 
